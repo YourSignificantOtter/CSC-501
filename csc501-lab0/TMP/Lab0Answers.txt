@@ -1,0 +1,87 @@
+Nicholas Herrmann
+unity ID naherrma
+CSC 501: Lab 0 Answers
+9/6/2019
+
+Additional Questions
+1) 
+ _______________
+|		| Top of Memory
+|	FREE    |
+|_______________|
+|		|
+|	Null 	|
+|	Process | Similar Stack len
+|	Mem	|
+|_______________|
+|		| Main stack limit = 0x00FFDFFC
+|	Main	|
+|	Process	| Main stack len = 0x00001000
+|	Stack	|
+|_______________| Main stack base = 0x00FF3FF8
+|		|
+|		|
+|_______________|
+|		|
+|	Heap	|
+|_______________|
+|		| ebss = 0x00026C38
+|	BSS	|
+|_______________|
+|		| edata = 0x0001e53D
+|	DATA	|
+|_______________|
+|	Text	| etext = 0x0001996D
+|		| main base address = 0x0001413a
+|	(Code)	|
+|_______________| Begin of Memory (0x0)
+
+
+2) Before calling printtos() the stack pointer is 0x00FFEFF4
+   After calling printtos() the stack pointer is 0x00FFEFA0
+   Difference between is 0x00FFEFF4 - 0x00FFEFA0 = 0x54
+ _______________ 
+|		|
+|	Stack	|
+|_______________|
+|	Local	|
+|	Variable|
+|_______________|
+|	Ret Addr|
+|_______________|
+|	EBP	|
+|_______________|
+
+By setting the optimization to 0 and looking at objdump -d printtos.o we can see what is pushed into the stack upon entering printtos()
+
+The beginning section of that objdump
+
+Disassembly of section .text:
+
+00000000 <printtos>:
+   0:	55                   	push   %ebp
+   1:	89 e5                	mov    %esp,%ebp
+   3:	83 ec 38             	sub    $0x38,%esp
+   6:	89 25 00 00 00 00    	mov    %esp,0x0
+   c:	89 2d 04 00 00 00    	mov    %ebp,0x4
+  12:	c7 04 24 00 00 00 00 	movl   $0x0,(%esp)
+  19:	e8 fc ff ff ff       	call   1a <printtos+0x1a>
+  1e:	c7 45 f0 00 00 ff ff 	movl   $0xffff0000,-0x10(%ebp)
+  25:	c7 45 ec ff ff 00 00 	movl   $0xffff,-0x14(%ebp)
+  2c:	c7 45 e8 ef be ad de 	movl   $0xdeadbeef,-0x18(%ebp)
+  33:	c7 45 e4 aa aa 55 55 	movl   $0x5555aaaa,-0x1c(%ebp)
+
+From the first few operations of printtos we can see what is pushed onto the stack at the start of the function
+the sack pointer for the calling function is saved so we can return to it later, and then the "new" stack is loaded
+with the local variables required for the function, see the last 4 lines for example local variables I wrote into printtos.c
+
+3) No the printtos() function does not show all the local variables declared. If we were to start printing the
+four elements from the bottom of the stack, ebp, rather from the top of the stack, esp, then all the local
+variables would be visible. But because we are printing from the top of the stack those 4 variables will be
+too "deep" into the stack to be printed.
+
+(please let me know if I am misunderstanding the difference between ESP and EBP here. To me it seems that ESP
+points to the TOP of the stack I.E. the last piece of data pushed on, however because the memory grows down this
+could be seen as the bottom of the stack. in which case EBP would be the top and the local variables shown in the
+objdump would be printed out starting at element #3.)
+
