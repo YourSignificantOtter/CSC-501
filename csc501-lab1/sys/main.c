@@ -11,6 +11,9 @@
  */
 int main()
 {
-	kprintf("\n\nHello World, Xinu lives\n\n");
+
+	setschedclass(2);
+	int test = getschedclass();
+	kprintf("%d\n", test);
 	return 0;
 }
