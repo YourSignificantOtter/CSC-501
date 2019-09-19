@@ -69,6 +69,7 @@ typedef	int	REG;		/* sizeof machine register		*/
 #define EXPDISTSCHED	1
 #define LINUXSCHED	2
 extern	int	currScheduleType;
+#define LAMBDA		0.1
 
 typedef short	STATWORD[1];	/* machine status for disable/restore	*/
 				/* by declaring it to be an array, the	*/
