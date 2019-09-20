@@ -14,7 +14,7 @@ int insert(int proc, int head, int key)
 	int	prev;
 
 	next = q[head].qnext;
-	while (q[next].qkey < key)	/* tail has maxint as key	*/
+	while (q[next].qkey <= key)	/* tail has maxint as key	*/
 		next = q[next].qnext;
 	q[proc].qnext = next;
 	q[proc].qprev = prev = q[next].qprev;
