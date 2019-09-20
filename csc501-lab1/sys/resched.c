@@ -8,6 +8,8 @@
 
 #include "lab1.h"
 
+//#define DEBUG_PRINT
+
 unsigned long currSP;	/* REAL sp of current process */
 extern int ctxsw(int, int, int, int);
 /*-----------------------------------------------------------------------
@@ -27,7 +29,7 @@ int resched()
 		int r = (int)tmp; //Cast to int because pprio is int
 		if(r < 0)
 			r = r * -1; //get the abs value of the expdev return
-		int min = 100; //max prio val is 99
+		int min = MAXINT; //max prio val is 99
 		int qiter = q[rdyhead].qnext;
 		int toRun = MAXINT;
 
@@ -44,35 +46,45 @@ int resched()
 			qiter = q[qiter].qnext;
 		}
 
-		kprintf("min: %d\ttoRun: %d\n", min, toRun);
+		#ifdef DEBUG_PRINT
+			kprintf("min: %d\ttoRun: %d\n", min, toRun);
+		#endif
 
 		struct pentry *optr = &proctab[currpid];
 		struct pentry *nptr;
 
 		if(toRun == MAXINT) //There exists no process with prio greater than r, switch to the process with the highest prio
 		{
-			toRun = getfirst(rdyhead);//First item in the queue
+			toRun = getfirst(rdyhead);//First item in the ordered queue will have highest prio
 			if(toRun == EMPTY) //No processes are wiating to run, run the nullprocess
 				toRun = 0;
 		}
 
-		if(toRun == currpid) //No need for context switch, re-insert the current pid into the ready queue
-		{
-			insert(currpid, rdyhead, optr->pprio);
+		if(toRun == currpid) //No need for context switch
 			return OK;
-		}
-		else
+
+		toRun = dequeue(toRun); //Pop the new process out the queue and insert the current process back in
+		if(optr->pstate == PRCURR)
 		{
-			toRun = dequeue(toRun); //Pop the new process out the queue and insert the current process back in
+			optr->pstate = PRREADY;
 			insert(currpid, rdyhead, optr->pprio);
 		}
 
 		nptr = &proctab[toRun]; //New process to run		
-		kprintf("currpid: %d\tnew pid: %d\n", currpid, toRun);
+		nptr->pstate = PRCURR;
 
-		//Force a context switch to the new process
-		kprintf("Current Process: %s\n", optr->pname);
-		kprintf("New Process: %s\n", nptr->pname);
+		#ifdef DEBUG_PRINT
+			//Force a context switch to the new process
+			kprintf("currpid: %d\tnew pid: %d\n", currpid, toRun);
+			kprintf("Current Process: %s\n", optr->pname);
+			kprintf("New Process: %s\n", nptr->pname);
+		#endif
+
+		#ifdef	RTCLOCK
+			preempt = QUANTUM;		// reset preemption counter	
+		#endif
+
+		currpid = toRun; //Set the currpid global to the new pid
 		ctxsw((int)&optr->pesp, (int)optr->pirmask, (int)&nptr->pesp, (int)nptr->pirmask);
 
 		// The OLD process returns here when resumed.
