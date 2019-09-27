@@ -1,7 +1,6 @@
 #ifndef LAB1_H_
 #define LAB1_H_
 
-//#define RAND_MAX 077777
 #define RAND_MAX 0x7FFF
 
 int rand(void);

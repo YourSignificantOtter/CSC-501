@@ -68,8 +68,9 @@ typedef	int	REG;		/* sizeof machine register		*/
 /* Scheduler changes for lab 1						*/
 #define EXPDISTSCHED	1
 #define LINUXSCHED	2
-extern	int	currScheduleType;
 #define LAMBDA		0.1
+extern	int	currScheduleType;
+
 
 typedef short	STATWORD[1];	/* machine status for disable/restore	*/
 				/* by declaring it to be an array, the	*/

@@ -9,6 +9,8 @@
 #include <io.h>
 #include <stdio.h>
 
+#include "lab1.h"
+
 LOCAL int newpid();
 
 /*------------------------------------------------------------------------
@@ -57,7 +59,30 @@ SYSCALL create(procaddr,ssize,priority,name,nargs,args)
 	pptr->pstate = PRSUSP;
 	for (i=0 ; i<PNMLEN && (int)(pptr->pname[i]=name[i])!=0 ; i++)
 		;
-	pptr->pprio = priority;
+
+	if(strcmp(name, INITNAME) == 0)
+	{
+		pptr->pprio = priority;
+		pptr->pnewprio = priority;
+		pptr->pcounter = priority;
+		pptr->pquantum = priority;
+	}
+	else
+	{
+		if(getschedclass() == LINUXSCHED)
+		{
+			pptr->pprio = 0;
+			pptr->pnewprio = priority;
+			pptr->pquantum = 0;
+			pptr->pcounter = 0;
+		}
+		else
+		{
+			pptr->pprio = priority;
+			pptr->pquantum = 0;
+			pptr->pcounter = 0;
+		}
+	}
 	pptr->pbase = (long) saddr;
 	pptr->pstklen = ssize;
 	pptr->psem = 0;
