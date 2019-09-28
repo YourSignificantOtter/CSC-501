@@ -1,0 +1,30 @@
+1. What are the advantages and disadvantages of each of the two scheduling policies? Also, give the advantages and disadvantages of the round robin scheduling policy originally implemented in Xinu.
+
+Original Xinu scheduling policy
+Advantages: Simple and fast, high priority processes would always be completed, deciding which process to schedule was O(1)
+Disadvantages: Caused low priority processes to starve, has no priorty inversion scheme to allow lower priority processes to run. Cant handle an empty ready queue
+
+Exponential Distribution Scheduler
+Advantages: Relatively Quick, for the given scenario chances are very high that the generated value will be less than the first element in the queue, therefore we can know right away to run process A. In a more real world 
+scenario this advantage is reduced. (Unless the lambda value can be updated according to some scheme that tracks the process priorities). Prevents starvation issues from the XINU scheduler above, While low priority processes dont have
+a very high chance of getting CPU time they still have a non zero chance.
+Disadvantages: won't 100% solve the starvation issue just reduces the likely hood. Smart programers will simply give their process a lower priority number to ensure they get more CPU time. Is no longer an O(1) function except
+for in cases where r > lastkey(q) or r < firstkey(q)
+
+Linux Like Scheduler
+Advantages: No more starvation, if a process has an amount of goodness and is not suspended it will be run during this epoch. Minimal context switching, because processes aren't being preempted as often. great for single threaded tasks.
+Offers the most robust solution of these 3 to ensure that processes will be scheduled and completed in the order of their priority.
+Disadvantages: Most time consuming of the three, increased overhead time. Because there is no preemption of processes during their quantum it does not lend itself to multi-threaded programs. 
+
+
+2. Describe the way each of the schedulers affects the NULL process.
+
+Original Xinu scheduling policy
+The null process is only ever going to be scheduled in this scheduler if it is the only entry in the ready queue, or if someone somehow changes the priority of the process.
+
+Exponential Distribution Scheduler
+Again the null process is only run when the ready queue is empty. If the queue is NOT empty then it is assured that one of the three rules that make up the schedule will be met.
+
+Linux Like Scheduler
+The null process is only scheduled when all other processes have no goodness, or are all suspended. This will only occur if the ready queue is empty other than the null process. Because the null process is a priority of 0 it will
+never have any goodness or quantum value to run

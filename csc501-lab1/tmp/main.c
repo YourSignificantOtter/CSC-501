@@ -1,9 +1,9 @@
 #include <conf.h>
 #include <kernel.h>
 #include <q.h>
-#include <sched.h>
+//#include <sched.h>
 #include <stdio.h>
-#include <math.h>
+//#include <math.h>
 
 #include "lab1.h"
 
