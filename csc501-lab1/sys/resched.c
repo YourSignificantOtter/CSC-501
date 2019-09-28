@@ -17,7 +17,7 @@ int goodnessvals[NPROC];
 
 int calcgoodness(int pid)
 {
-        if(pid == 0) //Null process has no goodness
+        if(pid == NULLPROC) //Null process has no goodness
                 return 0;
 
         if(proctab[pid].pcounter == 0) //process has consumed all of its quantum, no goodness
@@ -60,107 +60,69 @@ void printexpdistscheddebug(int r, struct pentry *optr, struct pentry *nptr)
  */
 int resched()
 {
+
 	int sched_class = getschedclass();
 	if(sched_class == EXPDISTSCHED)
 	{
-		double tmp = expdev(LAMBDA); //Randomly generated number following exponential distribution
+		double tmp = expdev((double)LAMBDA); //Randomly generated number following exponential distribution
 		int r = (int)tmp; //Cast to int because pprio is int
 		if(r < 0)
 			r = r * -1; //get the abs value of the expdev return
 
 		int qiter = q[rdyhead].qnext;
+		if(qiter == NULLPROC)
+			qiter = q[qiter].qnext;
+
 		int min = MAXINT; //max prio val is 99
 		int toRun = 0;
 		struct pentry *optr = &proctab[currpid];
 
-		if(q[rdyhead].qnext == rdytail) //Is the queue empty
+		if(isempty(rdyhead))
 		{
 			if(optr->pstate == PRCURR)
-				return OK; //keep running this process
-	
-			toRun = 0; //Run the null process
-			struct pentry *nptr = &proctab[toRun];		
-			currpid = toRun; //Set the currpid global to the new pid
-			nptr->pstate = PRCURR;
-			printexpdistscheddebug(r, optr, nptr);
-			ctxsw((int)&optr->pesp, (int)optr->pirmask, (int)&nptr->pesp, (int)nptr->pirmask);
-			#ifdef	RTCLOCK
-				preempt = QUANTUM;		// reset preemption counter	
-			#endif
-			return OK;
-
+				toRun = currpid; //continue to run this process
+			else
+				toRun = NULLPROC; 
 		}
-
-		if(r >= lastkey(rdytail)) //Is random value greater than the highest priority?
+		else
 		{
-			toRun = q[rdytail].qprev;
-			struct pentry *nptr = &proctab[toRun];		
-			//Compare the PID we have found with the currently running process
-			if(optr->pprio > q[toRun].qkey && optr->pstate == PRCURR) //The current process is greater than the one at the end of the list
+			if(r >= lastkey(rdytail)) //Is random value greater than the highest priority?
 			{
-				return OK; //The current process has higher priority and the randomly generated number is greater than all priorities
-			}
-			if(optr->pstate == PRCURR)
-			{
-				optr->pstate = PRREADY;
-				insert(currpid, rdyhead, optr->pprio); 
-			}
-			toRun = dequeue(toRun);
-			currpid = toRun; //Set the currpid global to the new pid
-			nptr->pstate = PRCURR;
-			printexpdistscheddebug(r, optr, nptr);
-			ctxsw((int)&optr->pesp, (int)optr->pirmask, (int)&nptr->pesp, (int)nptr->pirmask);
-			#ifdef	RTCLOCK
-				preempt = QUANTUM;		// reset preemption counter	
-			#endif
-			return OK;
-		}
+				toRun = q[rdytail].qprev;
+				//Compare the PID we have found with the currently running process
+				if(optr->pprio > q[toRun].qkey && optr->pstate == PRCURR) //The current process is greater than the one at the end of the list
+					toRun = currpid; //The current process has higher priority and the randomly generated number is greater than all priorities
 
-		if(r < firstkey(rdyhead))  //Is random value less than the lowest priority? (that isnt the null proc)
-		{
-			do { //Round robin
-				toRun = qiter;
-				qiter = q[qiter].qnext;
-			}while(q[qiter].qkey == q[toRun].qkey);
-			struct pentry *nptr = &proctab[toRun];		
-			if((optr->pprio < q[toRun].qkey && optr->pprio > r) && optr->pstate == PRCURR)
-			{
-				return OK;
 			}
-			if(optr->pstate == PRCURR)
+			else if(r < q[qiter].qkey)  //Is random value less than the lowest priority? (that isnt the null proc)
 			{
-				optr->pstate = PRREADY;
-				insert(currpid, rdyhead, optr->pprio); //We inserted the process into the queue up above
+				do { //Round robin
+					toRun = qiter;
+					qiter = q[qiter].qnext;
+				}while(q[qiter].qkey == q[toRun].qkey);
+
+				if((optr->pprio < q[toRun].qkey && optr->pprio > r) && optr->pstate == PRCURR)
+					toRun = currpid;
 			}
-			toRun = dequeue(toRun);
-			currpid = toRun; //Set the currpid global to the new pid
-			nptr->pstate = PRCURR;
-			printexpdistscheddebug(r, optr, nptr);
-			ctxsw((int)&optr->pesp, (int)optr->pirmask, (int)&nptr->pesp, (int)nptr->pirmask);
-			#ifdef	RTCLOCK
-				preempt = QUANTUM;		// reset preemption counter	
-			#endif
-			return OK;
-
-		}
-
-		qiter = q[rdyhead].qnext; //reset qiter
-		while(qiter != rdytail) // Find the right proc to run if none of the above
-		{
-			toRun = qiter;
-			if(q[qiter].qkey > r)
+			else //Traverse the queue
 			{
-				if(q[qiter].qkey <= min) //Round robin with the comparison operator
+				int qiter = q[rdyhead].qnext;
+				while(qiter != rdytail)
 				{
-					min = q[qiter].qkey;
-				}
-				else
-				{
-					toRun = q[qiter].qprev; //roll toRun back 1
-					break; //The queue is ordered so prioorities will only get higher
+					if(qiter != NULLPROC)
+					{
+						if(q[qiter].qkey > r)
+						{
+							if(q[qiter].qkey <= min) // <= as opposed to < gives us round robin
+							{
+								toRun = qiter;
+								min = q[qiter].qkey;
+							}
+						}
+					}
+					qiter = q[qiter].qnext;
 				}
 			}
-			qiter = q[qiter].qnext;
 		}
 
 		struct pentry *nptr = &proctab[toRun];
@@ -172,7 +134,7 @@ int resched()
 		if(optr->pstate == PRCURR)
 		{
 			optr->pstate = PRREADY;
-			insert(currpid, rdyhead, optr->pprio); //We inserted the process into the queue up above
+			insert(currpid, rdyhead, optr->pprio);
 		}
 
 		nptr = &proctab[ (currpid = dequeue(toRun)) ];
@@ -183,7 +145,8 @@ int resched()
 		printexpdistscheddebug(r, optr, nptr);	
 		ctxsw((int)&optr->pesp, (int)optr->pirmask, (int)&nptr->pesp, (int)nptr->pirmask);
 		// The OLD process returns here when resumed.
-		return OK;					
+		return OK;
+
 	}
 	else if(sched_class == LINUXSCHED)
 	{
@@ -247,12 +210,12 @@ int resched()
 
 		}
 		//Context switch
-		if(currpid == toRun && toRun != 0)
+		if(currpid == toRun && toRun != NULLPROC)
 		{
 			return OK;
 		}
 
-		if(toRun == 0)
+		if(toRun == NULLPROC)
 		{
 			//Make sure that the ready queue is empty, else we shouldnt be running the nullproc!
 			if(isempty(rdyhead))

@@ -1,7 +1,7 @@
 #ifndef LAB1_H_
 #define LAB1_H_
 
-#define RAND_MAX 0x7FFF
+#define RAND_MAX 32767
 
 int rand(void);
 //void srand(unsigned int);
