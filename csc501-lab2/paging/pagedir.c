@@ -64,5 +64,28 @@ unsigned long create_page_directory(int pid)
 	#endif
 
 	proctab[pid].pdbr = (unsigned long)pd;
+	restore(ps);
 	return pd; //This return is the PDBR for the newly created PD
+}
+
+
+/*------------------------------------------------------------------------
+ * dump_page_directory - prints a processes page directory
+ *	pid - the process ID of the page directory to dump
+ *------------------------------------------------------------------------
+ */
+void dump_page_directory(int pid)
+{
+	STATWORD ps;
+	disable(ps);
+
+	pd_t *pd = (pd_t *)proctab[pid].pdbr;
+	
+	int i = 0;
+	for(; i < NEPG; i++)
+	{
+		kprintf("Entry: %d\tContents: %08X\n", i, pd[i]);
+	}
+
+	restore(ps);	
 }

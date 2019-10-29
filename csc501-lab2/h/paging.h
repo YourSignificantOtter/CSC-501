@@ -1,5 +1,7 @@
 /* paging.h */
 
+#include <kernel.h>
+
 typedef unsigned int	 bsd_t;
 
 /* Structure for a page directory entry */
@@ -44,10 +46,11 @@ typedef struct{
 
 typedef struct{
   int bs_status;			/* MAPPED or UNMAPPED		*/
-  int bs_pid;				/* process id using this slot   */
+  Bool bs_pid[NPROC];			/* process ids using this slot   */
   int bs_vpno;				/* starting virtual page number */
   int bs_npages;			/* number of pages in the store */
   int bs_sem;				/* semaphore mechanism ?	*/
+  int bs_private;			/* is this bs private		*/
 } bs_map_t;
 
 typedef struct{
@@ -61,6 +64,7 @@ typedef struct{
 
 extern bs_map_t bsm_tab[];
 extern fr_map_t frm_tab[];
+extern int g_pt[];
 /* Prototypes for required API calls */
 SYSCALL xmmap(int, bsd_t, int);
 SYSCALL xunmap(int);
@@ -72,16 +76,25 @@ SYSCALL release_bs(bsd_t);
 SYSCALL read_bs(char *, bsd_t, int);
 SYSCALL write_bs(char *, bsd_t, int);
 
+#define NGPG		4	/* number of global pages	*/
 #define NBPG		4096	/* number of bytes per page	*/
+#define NEPG		1024	/* number of entries per page	*/
 #define FRAME0		1024	/* zero-th frame		*/
 #define NFRAMES 	1024	/* number of frames		*/
 
 #define BSM_UNMAPPED	0
 #define BSM_MAPPED	1
 
+#define BSM_PRIVATE	1
+#define BSM_PUBLIC	0
+
 #define FRM_UNMAPPED	0
 #define FRM_MAPPED	1
 
+#define DIRTY		1
+#define CLEAN		0
+
+#define FR_INIT		-1
 #define FR_PAGE		0
 #define FR_TBL		1
 #define FR_DIR		2
@@ -89,5 +102,23 @@ SYSCALL write_bs(char *, bsd_t, int);
 #define SC 3
 #define AGING 4
 
+#define NBS		8	/* Number of Backing Stores	*/
 #define BACKING_STORE_BASE	0x00800000
 #define BACKING_STORE_UNIT_SIZE 0x00100000
+
+#define PAGE_TABLE_NUM_MASK	0xFFC00000
+#define PAGE_NUM_MASK		0x003FF000
+#define OFFSET_MASK		0x00000FFF
+
+#define PAGE_TABLE_NUM_SHIFT	22
+#define PAGE_NUM_SHIFT		12
+#define OFFSET_SHIFT		0
+
+void enable_paging();
+void write_cr3(unsigned long n);
+unsigned long read_cr3(void);
+
+void print_frm(fr_map_t frame);
+
+unsigned long create_page_directory(int pid);
+void dump_page_directory(int pid);

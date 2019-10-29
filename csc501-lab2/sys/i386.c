@@ -62,8 +62,10 @@ struct tss i386_tasks[2] = {
    0x8,	/* cs			*/
    0,	/* mbz			*/
    0x18,/* ss			*/
+//   0xFF,/* ss			*/
    0,	/* mbz			*/
    0x10,/* ds			*/
+//   0xFF,/* ds			*/
    0,	/* mbz			*/
    0,	/* fs			*/
    0,	/* mbz			*/
@@ -102,8 +104,10 @@ struct tss i386_tasks[2] = {
    0x8,	/* cs			*/
    0,	/* mbz			*/
    0x18,/* ss			*/
+//   0xFF,/* ss			*/
    0,	/* mbz			*/
    0x10,/* ds			*/
+//   0xFF,/* ds			*/
    0,	/* mbz			*/
    0,	/* fs			*/
    0,	/* mbz			*/
@@ -137,8 +141,8 @@ setsegs()
 /*
 	maxaddr = (char *)(npages * NBPG - 1);
 */
-	maxaddr = (char *)( 1536 * NBPG - 1); /* 10M size */
-				 	      /* the top 10M is used for backing store */
+	maxaddr = (char *)( 2048 * NBPG - 1); /* 4M Kernel */
+				 	      /* the top 8M is used for backing store */
 
 	psd = &gdt_copy[1];	/* kernel code segment */
 	np = ((int)&etext + NBPG-1) / NBPG;	/* # code pages */

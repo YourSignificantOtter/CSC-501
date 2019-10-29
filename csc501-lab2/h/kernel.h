@@ -3,6 +3,8 @@
 #ifndef _KERNEL_H_
 #define _KERNEL_H_
 
+#define DBG_PRINT
+
 /* Symbolic constants used throughout Xinu */
 
 typedef	char		Bool;		/* Boolean type			*/
@@ -154,6 +156,16 @@ SYSCALL stacktrace(int pid);
 SYSCALL	suspend(int pid);
 SYSCALL	unsleep(int pid);
 SYSCALL	wait(int sem);
+
+//Lab 2 new SYSCALLS
+SYSCALL vcreate(int *procaddr, int ssize, int hsize, int priority, char *name, int nargs, long args);
+SYSCALL srpolicy(int policy);
+SYSCALL pfint();
+
+
+//Replacement policy defines
+#define SC 3
+#define AGING 4
 
 int strtclk();
 int stopclk();

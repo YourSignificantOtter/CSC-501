@@ -18,6 +18,8 @@
 #define	HOLEEND		((1024 + HOLESIZE) * 1024)  
 /* Extra 600 for bootp loading, and monitor */
 
+int g_pt[NGPG];
+
 extern	int	main();	/* address of user's main prog	*/
 
 extern	int	start();
@@ -62,6 +64,45 @@ int page_replace_policy = SC;
 /***   not do I/O unless it uses kprintf for polled output.           ***/
 /***								      ***/
 /************************************************************************/
+
+/*------------------------------------------------------------------------
+ * Create global page tables - I dont know what these are used for
+ *------------------------------------------------------------------------
+ */
+void createGlobalPageTables()
+{
+	#ifdef DBG_PRINT
+		kprintf("Initiailizing global page tables\n");
+	#endif
+
+	int i = 0;
+	for(; i < NGPG; i++)
+	{
+		g_pt[i] = FRAME0 + i;
+		init_frm(i, NULLPROC, FR_TBL); //Get and init frame 0 - 3
+		int j = 0;
+		pt_t *pt = (pt_t *)((FRAME0 + i) * NBPG); //Get the physical address of the frame
+		for(; j < NEPG; j++)
+		{
+			pt[j].pt_pres	= 1; //Page is now present
+			pt[j].pt_write	= 1; //Page is writable
+			pt[j].pt_user	= 0; //I dont know what this bit controls
+			pt[j].pt_pwt	= 0; //I dont know what this does either
+			pt[j].pt_pcd	= 0; //No cache
+			pt[j].pt_acc	= 0; //Page not yet accessed
+			pt[j].pt_dirty	= CLEAN; //Page not yet dirty
+			pt[j].pt_mbz	= 0; //Dont know what this is
+			pt[j].pt_global	= 1; //These first 4 pages ARE the global pages
+			pt[j].pt_avail	= 0; 
+			pt[j].pt_base	= (i * NEPG) + j; //maps the first 16M of memory????
+		}			
+	}
+
+	#ifdef DBG_PRINT
+		kprintf("Global Pages Initialized!\n\n");
+	#endif
+}
+
 
 /*------------------------------------------------------------------------
  *  nulluser  -- initialize system and become the null process (id==0)
@@ -186,6 +227,16 @@ sysinit()
 	}
 #endif
 
+	//Initialize backing stores
+	init_bsm();
+
+	//Initialize frames
+	init_frm_table();
+
+	//create page tables which map pages 0 through 4095 to physical 16MB
+	//Global Page Tables
+	createGlobalPageTables();
+
 	pptr = &proctab[NULLPROC];	/* initialize null process entry */
 	pptr->pstate = PRCURR;
 	for (j=0; j<7; j++)
@@ -210,6 +261,14 @@ sysinit()
 
 	rdytail = 1 + (rdyhead=newqueue());/* initialize ready list */
 
+	//Create the page directory for NULL
+	unsigned int PDBR = create_page_directory(NULLPROC);
+	//Set the PDBR for NULL
+	write_cr3(PDBR);
+	//Set ISR for page fault handling
+	set_evec(14, pfintr);
+	//Begin using paging
+	//enable_paging();
 
 	return(OK);
 }
