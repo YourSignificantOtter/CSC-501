@@ -46,9 +46,9 @@ typedef struct{
 
 typedef struct{
   int bs_status;			/* MAPPED or UNMAPPED		*/
-  Bool bs_pid[NPROC];			/* process ids using this slot   */
+  Bool bs_pid[NPROC];			/* process ids using this slot  */
   int bs_vpno;				/* starting virtual page number */
-  int bs_npages;			/* number of pages in the store */
+  int bs_npages;			/* number of pages IN USE in the store */
   int bs_sem;				/* semaphore mechanism ?	*/
   int bs_private;			/* is this bs private		*/
 } bs_map_t;
@@ -81,6 +81,7 @@ SYSCALL write_bs(char *, bsd_t, int);
 #define NEPG		1024	/* number of entries per page	*/
 #define FRAME0		1024	/* zero-th frame		*/
 #define NFRAMES 	1024	/* number of frames		*/
+#define VIRTMEMSTART	4096	/* start of virtual memory	*/
 
 #define BSM_UNMAPPED	0
 #define BSM_MAPPED	1
@@ -103,6 +104,7 @@ SYSCALL write_bs(char *, bsd_t, int);
 #define AGING 4
 
 #define NBS		8	/* Number of Backing Stores	*/
+#define NPGBS		256	/* Max num pages Backing Store	*/
 #define BACKING_STORE_BASE	0x00800000
 #define BACKING_STORE_UNIT_SIZE 0x00100000
 

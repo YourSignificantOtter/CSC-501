@@ -13,6 +13,9 @@ bs_map_t bsm_tab[NBS];
  */
 SYSCALL init_bsm()
 {
+	STATWORD ps;
+	disable(ps); //disable interrupts
+
 	#ifdef DBG_PRINT
 		kprintf("Initiaizlize backing stores\n");
 	#endif
@@ -41,6 +44,8 @@ SYSCALL init_bsm()
 		kprintf("Backing Stores Initialized!\n");
 	#endif
 
+	restore(ps); //enable interrupts
+
 	return OK;
 }
 
@@ -67,6 +72,38 @@ SYSCALL free_bsm(int i)
  */
 SYSCALL bsm_lookup(int pid, long vaddr, int* store, int* pageth)
 {
+	unsigned int vpno = vaddr / NBPG;
+	unsigned int i = 0;
+	bs_map_t *bs;
+	for(; i < NBS; i++)
+	{
+		bs = &bsm_tab[i];
+		if(bs->bs_status == BSM_UNMAPPED)
+			continue; //no need to check this one
+
+		if(bs->bs_pid[pid] == TRUE) //This pid is using this backing store
+		{
+			#ifdef DBG_PRINT
+				kprintf("bsm_lookup i: %d\tvpno: %04X\tbs_vpno: %04X\tbs_npages: %d\n", i, vpno, bs->bs_vpno, bs->bs_npages);
+			#endif
+
+			if(vpno >= bs->bs_vpno)
+			{
+				if(vpno < (bs->bs_vpno + bs->bs_npages)) //The given address is inside THIS backing store
+				{
+					*store = i;
+					*pageth = vpno - bs->bs_vpno; //the page within the backing store
+					return OK; //stop looking we already found it
+				}
+			}
+		}
+	}
+
+	#ifdef DBG_PRINT
+		kprintf("bsm_lookup failed to find any backing stores that matched!\n");
+	#endif
+
+	return SYSERR;
 }
 
 
@@ -76,6 +113,42 @@ SYSCALL bsm_lookup(int pid, long vaddr, int* store, int* pageth)
  */
 SYSCALL bsm_map(int pid, int vpno, int source, int npages)
 {
+	#ifdef DBG_PRINT
+		kprintf("Attempting to map bsm %d\n", source);
+	#endif
+
+	bs_map_t *bs = &bsm_tab[source];
+
+	if(bs->bs_private == BSM_PRIVATE)
+	{
+		#ifdef DBG_PRINT
+			kprintf("bsm %d is private, cannot map to it\n", source);
+		#endif
+		return SYSERR;
+	}
+
+	if(bs->bs_status == BSM_UNMAPPED)
+	{
+		//Need to map this bsm
+		bs->bs_status	= BSM_MAPPED;
+		bs->bs_pid[pid]	= TRUE;
+		bs->bs_private	= BSM_PUBLIC;
+		bs->bs_npages	= npages;
+		bs->bs_vpno	= vpno;
+	}
+	else
+	{
+		//the bsm is already mapped just add this pid and update npages + vpno
+		bs->bs_pid[pid]	= TRUE;
+		bs->bs_npages	= npages;
+		bs->bs_vpno	= vpno;
+	}
+
+	#ifdef DBG_PRINT
+		kprintf("bsm %d mapped\n", source);
+	#endif
+
+	return OK;
 }
 
 
@@ -95,7 +168,9 @@ SYSCALL bsm_unmap(int pid, int vpno, int flag)
 void print_bsm(bs_map_t bs)
 {
 	kprintf("bs_status:\t%d\n", bs.bs_status);
-	kprintf("bs_pid:\t\t%d\n", bs.bs_pid);
+	int i = 0;
+	for(; i < NPROC; i++)
+		kprintf("bs_pid[%d]:\t%d\n", i, bs.bs_pid[i]);
 	kprintf("bs_vpno:\t%d\n", bs.bs_vpno);
 	kprintf("bs_npages:\t%d\n", bs.bs_npages); 
 	kprintf("bs_private:\t%d\n", bs.bs_private);

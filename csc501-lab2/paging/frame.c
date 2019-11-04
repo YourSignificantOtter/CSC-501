@@ -12,6 +12,9 @@ fr_map_t frm_tab[NFRAMES];
  */
 SYSCALL init_frm_table()
 {
+	STATWORD ps;
+	disable(ps); //Disable interrupts
+
 	#ifdef DBG_PRINT
 		kprintf("Initialize Frames\n");
 	#endif
@@ -39,6 +42,8 @@ SYSCALL init_frm_table()
 	#ifdef DBG_PRINT
 		kprintf("Frames are Initialized!");
 	#endif
+
+	restore(ps); //restore interrupts
 
 	return OK;
 }

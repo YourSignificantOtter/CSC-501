@@ -71,6 +71,9 @@ int page_replace_policy = SC;
  */
 void createGlobalPageTables()
 {
+	STATWORD ps;
+	disable(ps); //disable interrupts
+
 	#ifdef DBG_PRINT
 		kprintf("Initiailizing global page tables\n");
 	#endif
@@ -101,6 +104,8 @@ void createGlobalPageTables()
 	#ifdef DBG_PRINT
 		kprintf("Global Pages Initialized!\n\n");
 	#endif
+	
+	restore(ps); //restore interrupts
 }
 
 
@@ -173,7 +178,7 @@ sysinit()
 	struct	pentry	*pptr;
 	struct	sentry	*sptr;
 	struct	mblock	*mptr;
-	SYSCALL pfintr();
+	int pfintr();
 
 	
 
@@ -266,9 +271,9 @@ sysinit()
 	//Set the PDBR for NULL
 	write_cr3(PDBR);
 	//Set ISR for page fault handling
-	set_evec(14, pfintr);
+	set_evec(14, (unsigned long)pfintr);
 	//Begin using paging
-	//enable_paging();
+	enable_paging();
 
 	return(OK);
 }
