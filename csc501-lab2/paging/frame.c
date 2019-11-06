@@ -62,7 +62,7 @@ SYSCALL init_frm(int frmIdx, int pid, int type)
 
 	frm_tab[frmIdx].fr_status = FRM_MAPPED;
 	frm_tab[frmIdx].fr_pid = pid;
-	frm_tab[frmIdx].fr_refcnt++;
+	frm_tab[frmIdx].fr_refcnt = 1;
 	frm_tab[frmIdx].fr_type = type;
 	frm_tab[frmIdx].fr_dirty = CLEAN;
 
@@ -117,6 +117,39 @@ SYSCALL free_frm(int i)
 }
 
 /*-------------------------------------------------------------------------
+ * find_frm - find a specific frame
+ *	pid - the process with the frame to find
+ *	vpno - the virtual page number to find
+ *	type - the type of frame to find
+ *	frmIdx - the returned frame index 
+ *-------------------------------------------------------------------------
+ */
+SYSCALL find_frm(int pid, int vpno, int type, int *frmIdx)
+{
+	*frmIdx = -1;
+	int i = 0;
+	for(; i <NFRAMES; i++)
+	{
+		//Skip if the frame isnt mapped
+		if(frm_tab[i].fr_status == FRM_UNMAPPED)
+			continue; 
+
+		//Otherwise check if its mapped to the pid we are searching for
+		if(frm_tab[i].fr_pid == pid && frm_tab[i].fr_type == type && frm_tab[i].fr_vpno == vpno)
+		{
+			//Return this value
+			*frmIdx = i;
+			break;
+		}
+	}
+
+	if(*frmIdx == -1)
+		return SYSERR;
+
+	return OK;
+}
+
+/*-------------------------------------------------------------------------
  * print_frm - print a frame 
  *-------------------------------------------------------------------------
  */
@@ -128,4 +161,22 @@ void print_frm(fr_map_t frame)
 	kprintf("fr_refcnt:\t%d\n", frame.fr_refcnt);
 	kprintf("fr_type:\t%d\n", frame.fr_type);
 	kprintf("fr_dirty:\t%d\n", frame.fr_dirty);
+}
+
+void print_frm_contents(int frameIdx)
+{
+	STATWORD ps;
+	disable(ps);
+
+	int i = 0;
+	unsigned char *address = (unsigned char *)((FRAME0 + frameIdx) * NBPG);
+	unsigned char data;
+	for(; i < NEPG * 2; i++)
+	{
+		data = *address;
+		kprintf("0x%08X: %c\n", address, data);
+		address++; 
+	}
+
+	restore(ps);
 }

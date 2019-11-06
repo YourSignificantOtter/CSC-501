@@ -124,3 +124,5 @@ void print_frm(fr_map_t frame);
 
 unsigned long create_page_directory(int pid);
 void dump_page_directory(int pid);
+
+SYSCALL find_frm(int pid, int vpno, int type, int *frmIdx);
