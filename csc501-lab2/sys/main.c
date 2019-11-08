@@ -59,7 +59,7 @@ void proc1_test3(char *msg, int lck) {
 	addr = (char*) 0x0;
 
 	for (i = 0; i < 1024; i++) {
-		*(addr + i * NBPG) = 'B';
+//		*(addr + i * NBPG) = 'B'; //This overwrites some kernel code, causes the whole thing to crash
 	}
 
 	for (i = 0; i < 1024; i++) {
@@ -77,15 +77,17 @@ int main() {
 	resume(pid1);
 	sleep(10);
 
-//	kprintf("\n2: vgetmem/vfreemem\n");
-//	pid1 = vcreate(proc1_test2, 2000, 100, 20, "proc1_test2", 0, NULL);
-//	kprintf("pid %d has private heap\n", pid1);
-//	resume(pid1);
-//	sleep(3);
-
-//	kprintf("\n3: Frame test\n");
-//	pid1 = create(proc1_test3, 2000, 20, "proc1_test3", 0, NULL);
-//	resume(pid1);
-//	sleep(3);
-
+/*
+	kprintf("\n2: vgetmem/vfreemem\n");
+	pid1 = vcreate(proc1_test2, 2000, 100, 20, "proc1_test2", 0, NULL);
+	kprintf("pid %d has private heap\n", pid1);
+	resume(pid1);
+	sleep(3);
+*/
+/*
+	kprintf("\n3: Frame test\n");
+	pid1 = create(proc1_test3, 2000, 20, "proc1_test3", 0, NULL);
+	resume(pid1);
+	sleep(3);
+*/
 }

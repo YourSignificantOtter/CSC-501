@@ -7,7 +7,8 @@
 #include <sem.h>
 #include <mem.h>
 #include <io.h>
-#include <paging.h>
+
+#include "paging.h"
 
 /*
 static unsigned long esp;
@@ -28,7 +29,51 @@ SYSCALL vcreate(procaddr,ssize,hsize,priority,name,nargs,args)
 	long	args;			/* arguments (treated like an	*/
 					/* array in the code)		*/
 {
-	kprintf("To be implemented!\n");
+
+	STATWORD ps;
+	disable(ps);
+
+	#ifdef DBG_PRINT
+		kprintf("Call to vcreate, function: %s\tWith %d private pages\n", name, hsize);
+	#endif
+
+	if(hsize > NPGBS || hsize <= 0)
+	{
+		#ifdef DBG_PRINT
+			kprintf("Call to vcreate with hsize > 256 or <= 0\n");
+			kprintf("Process will not be created\n");
+		#endif
+		restore(ps);
+		return SYSERR;
+	}
+
+	int pid = create(procaddr, ssize, priority, name, nargs, args); //Actually create the process
+
+	//find and set a backing store to act as this processes private heap
+	int privateHeap; //The private backing store that will be used for this process
+	if(get_private_bs(&privateHeap) == SYSERR)
+	{
+		#ifdef DBG_PRINT
+			kprintf("Could not find a backing store to use as a private heap for this function\n");
+			kprintf("Function will not be created!\n");
+		#endif
+		restore(ps);
+		return SYSERR;
+	}
+
+	//Set the private store information in the process stucture
+	struct pentry *pptr = &proctab[pid];
+	pptr->store = privateHeap;
+	pptr->vhpnpages = hsize;
+
+	//Map the backing store
+	int pageNum = VIRTMEMSTART; //How can we handle multiple calls to vcreate?
+	bsm_map(pid, pageNum, privateHeap, hsize);
+	bsm_tab[privateHeap].bs_private = BSM_PRIVATE; //Set the backing store to be private, bsm_map defaults to public
+
+	//TODO: Add memlist stuff here
+
+	restore(ps);
 	return OK;
 }
 

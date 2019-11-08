@@ -50,11 +50,53 @@ SYSCALL init_bsm()
 }
 
 /*-------------------------------------------------------------------------
- * get_bsm - get a free entry from bsm_tab 
+ * get_public_bsm - get a unmapped or public entry from the bsm_tab
  *-------------------------------------------------------------------------
  */
-SYSCALL get_bsm(int* avail)
+SYSCALL get_public_bs(int* avail)
 {
+	int i = 0;
+	*avail = -1;
+
+	for(; i < NBS; i++)
+	{
+		if(bsm_tab[i].bs_status == BSM_UNMAPPED || bsm_tab[i].bs_private == BSM_PUBLIC)
+		{
+			*avail = i;
+			break;
+		}
+	}
+
+	if(*avail == -1)
+		return SYSERR;
+
+	return OK;
+	
+}
+
+
+/*-------------------------------------------------------------------------
+ * get_private_bsm - get an unmapped entry from the bsm_tab
+ *-------------------------------------------------------------------------
+ */
+SYSCALL get_private_bs(int* avail)
+{
+	int i = 0;
+	*avail = -1;
+
+	for(; i < NBS; i++)
+	{
+		if(bsm_tab[i].bs_status == BSM_UNMAPPED)
+		{
+			*avail = i;
+			break;
+		}
+	}
+
+	if(*avail == -1)
+		return SYSERR;
+
+	return OK;
 }
 
 
@@ -64,6 +106,21 @@ SYSCALL get_bsm(int* avail)
  */
 SYSCALL free_bsm(int i)
 {
+	#ifdef DBG_PRINT
+		kprintf("Freeing bsm_tab[%d]\n", i);
+	#endif
+
+	bsm_tab[i].bs_private	= BSM_PUBLIC;
+	bsm_tab[i].bs_status	= BSM_UNMAPPED;
+	int j = 0;
+	for(; j < NPROC; j++)
+		bsm_tab[i].bs_pid[j]	= FALSE;
+
+	bsm_tab[i].bs_vpno	= 0;
+	bsm_tab[i].bs_npages	= BSM_UNMAPPED;
+	bsm_tab[i].bs_sem	= NULL;	
+	
+	return OK;
 }
 
 /*-------------------------------------------------------------------------
@@ -157,8 +214,47 @@ SYSCALL bsm_map(int pid, int vpno, int source, int npages)
  * bsm_unmap - delete an mapping from bsm_tab
  *-------------------------------------------------------------------------
  */
-SYSCALL bsm_unmap(int pid, int vpno, int flag)
+SYSCALL bsm_unmap(int pid, int vpno, int source)
 {
+	#ifdef DBG_PRINT
+		kprintf("Attempting to unmap bsm %d\n", source);
+	#endif
+
+	bs_map_t *bs = &bsm_tab[source];
+
+	if(bs->bs_private == BSM_PRIVATE)
+	{
+		#ifdef DBG_PRINT
+			kprintf("Unmapping a backing store that was used as private heap\n");
+		#endif
+		//since it was a private backing store no other process could have used it
+		//Can safely set to unmapped without worrying about another process losing data
+		free_bsm(source);
+		return OK;
+	}
+
+	int i = 0;
+	int check = 0;
+	for(; i < NPROC; i++) //Check if other processes are using the backing store
+	{
+		//in Kernel.h FALSE is defined as 0 and TRUE is defined as 1
+		check += (int) bs->bs_pid[i];
+	}
+
+	if(check == 1) //Currpid is the only pid using this backing store
+	{
+		#ifdef DBG_PRINT
+			kprintf("Unmapping a backing store that was used by a single process\n");
+		#endif
+		//Since no other process was using this we can safely unmap
+		free_bsm(source);
+		return OK;
+	}
+	
+	//More than one process is mapped to this backing store
+	//Simply remove the passed pid from the backing store map
+	bs->bs_pid[pid] = FALSE;
+	return OK;
 }
 
 /*-------------------------------------------------------------------------

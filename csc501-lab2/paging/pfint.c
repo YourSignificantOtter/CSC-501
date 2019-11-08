@@ -33,7 +33,7 @@ SYSCALL pfint()
 		kprintf("Killing process %s!\n", proctab[currpid].pname);
 		kill(currpid);
 		restore(ps);
-		return SYSERR; //I dont think this will ever run? but just to be safe ill leave it
+		return SYSERR;
 	}
 
 	//Get the pdbr and the portions of the bad virtual address
@@ -42,6 +42,10 @@ SYSCALL pfint()
 	unsigned int pageDirectoryIdx	= vaddr->pd_offset;
 	unsigned int pageTableIdx	= vaddr->pt_offset;
 	unsigned int pageOffset		= vaddr->pg_offset;
+
+//	kprintf("pageDirectoryIdx: %d\tpageTableIdx: %d\tpageOffset: %d\n", pageDirectoryIdx, pageTableIdx, pageOffset);
+//	dump_page_directory(currpid);
+
 
 	pt_t *newPt;
 
@@ -61,10 +65,7 @@ SYSCALL pfint()
 				kprintf("Obtain new frame failed!\n");
 				kprintf("Implement page replacement policies!\n");
 			#endif
-			while(1)
-				;
-			restore(ps);
-			return SYSERR;
+			pagereplace(badAddr);
 		}
 
 		//initialize the new frame as a page table
@@ -90,6 +91,7 @@ SYSCALL pfint()
 	#endif
 
 	//Check if the page that we are trying to access is present
+	pt_t *pageTable = (pt_t *)(pdbr[pageDirectoryIdx].pd_base * NBPG);
 	int pageFrame = -1;
 
 //	if(pageTable[pageTableIdx].pt_pres != 1)
@@ -108,8 +110,7 @@ SYSCALL pfint()
 				kprintf("Ran out of frames\n");
 				kprintf("Perform page replacement\n");
 			#endif
-			while(1)
-				;
+			pagereplace(badAddr);
 		}
 
 		//Initialize the frame to be a page
@@ -118,6 +119,11 @@ SYSCALL pfint()
 
 		//Copy the backing store information into the new page
 		read_bs((FRAME0 + pageFrame) * NBPG, store, pageth);
+
+	 	//Update the page table entry to show the new page table 
+		pageTable[pageTableIdx].pt_pres = 1;
+		pageTable[pageTableIdx].pt_write = 1;
+		pageTable[pageTableIdx].pt_base = (FRAME0 + pageFrame);
 	}
 	else
 	{
@@ -136,12 +142,6 @@ SYSCALL pfint()
 		while(1)
 			;
 	}
-
-	//Update the page table entry to show the new page table
-	pt_t *pageTable = (pt_t *)(pdbr[pageDirectoryIdx].pd_base * NBPG);
-	pageTable[pageTableIdx].pt_pres = 1;
-	pageTable[pageTableIdx].pt_write = 1;
-	pageTable[pageTableIdx].pt_base = (FRAME0 + pageFrame);
 
 	#ifdef DBG_PRINT
 		kprintf("Address: 0x%08X\n", badAddr);

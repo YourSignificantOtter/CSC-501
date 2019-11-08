@@ -79,6 +79,33 @@ SYSCALL xmmap(int virtpage, bsd_t source, int npages)
  */
 SYSCALL xmunmap(int virtpage)
 {
-  kprintf("To be implemented!");
-  return SYSERR;
+	STATWORD ps;
+	disable(ps);
+
+	//Check if the virtpage is actually mapped in any backing stores
+	int i = 0;
+	int store = 0, page = 0;
+	for(;i < NBS; i++)
+	{
+		
+		if(bsm_lookup(currpid, virtpage * NBPG, &store, &page) == SYSERR)
+		{
+			continue; //these arent the droids you are looking for
+		}
+		else
+		{
+			//This is the bsm we want to unmap, remove this from the backing store
+			bsm_unmap(currpid, virtpage, i);
+			restore(ps);
+			return OK;		
+		}
+		
+	}
+
+	#ifdef DBG_PRINT
+		kprintf("Call to xmunmap(%d) failed. No backing store exists mapping the process %s to the given virtual page!\n", virtpage, proctab[currpid].pname);
+	#endif
+
+	restore(ps);
+	return SYSERR;
 }

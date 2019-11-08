@@ -32,15 +32,14 @@ SYSCALL init_pt(pt_t *pt)
 	return OK;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+/*---------------------------------------------------------------------------
+ * clear_page_table - clears the data in a page table, called in free_frm
+ * 	frameIdx - the index of the frame that holds the page table
+ *---------------------------------------------------------------------------
+ */
+SYSCALL clear_page_table(int frameIdx)
+{
+	pt_t *pt = (pt_t *)((FRAME0 + frameIdx) * NBPG);
+	init_pt(pt);
+	return OK;
+}

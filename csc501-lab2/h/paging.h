@@ -1,6 +1,7 @@
 /* paging.h */
 
 #include <kernel.h>
+#include "circular_queue.h"
 
 typedef unsigned int	 bsd_t;
 
@@ -65,13 +66,16 @@ typedef struct{
 extern bs_map_t bsm_tab[];
 extern fr_map_t frm_tab[];
 extern int g_pt[];
+extern c_q_entry_t *queueRoot;
+extern Bool pageReplaceDebug;
+
 /* Prototypes for required API calls */
 SYSCALL xmmap(int, bsd_t, int);
 SYSCALL xunmap(int);
 
 /* given calls for dealing with backing store */
 
-int get_bs(bsd_t, unsigned int);
+int get_bs(bsd_t bs_id, unsigned int npages);
 SYSCALL release_bs(bsd_t);
 SYSCALL read_bs(char *, bsd_t, int);
 SYSCALL write_bs(char *, bsd_t, int);
@@ -80,7 +84,7 @@ SYSCALL write_bs(char *, bsd_t, int);
 #define NBPG		4096	/* number of bytes per page	*/
 #define NEPG		1024	/* number of entries per page	*/
 #define FRAME0		1024	/* zero-th frame		*/
-#define NFRAMES 	1024	/* number of frames		*/
+#define NFRAMES 	30	/* number of frames		*/
 #define VIRTMEMSTART	4096	/* start of virtual memory	*/
 
 #define BSM_UNMAPPED	0
@@ -126,3 +130,6 @@ unsigned long create_page_directory(int pid);
 void dump_page_directory(int pid);
 
 SYSCALL find_frm(int pid, int vpno, int type, int *frmIdx);
+
+SYSCALL get_public_bs(int *avail);
+SYSCALL get_private_bs(int *avail);

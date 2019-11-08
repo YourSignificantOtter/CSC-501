@@ -10,6 +10,8 @@
 #include <tty.h>
 #include <q.h>
 #include <io.h>
+
+#include <circular_queue.h>
 #include <paging.h>
 
 /*#define DETAIL */
@@ -88,7 +90,7 @@ void createGlobalPageTables()
 		for(; j < NEPG; j++)
 		{
 			pt[j].pt_pres	= 1; //Page is now present
-			pt[j].pt_write	= 1; //Page is writable
+			pt[j].pt_write	= 0; //Page is writable
 			pt[j].pt_user	= 0; //I dont know what this bit controls
 			pt[j].pt_pwt	= 0; //I dont know what this does either
 			pt[j].pt_pcd	= 0; //No cache
@@ -265,6 +267,9 @@ sysinit()
 	}
 
 	rdytail = 1 + (rdyhead=newqueue());/* initialize ready list */
+
+	//Create a circular queue for SC page replacement policy
+	//init_circular_queue(queueRoot);
 
 	//Create the page directory for NULL
 	unsigned int PDBR = create_page_directory(NULLPROC);

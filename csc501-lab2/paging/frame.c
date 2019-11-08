@@ -71,6 +71,12 @@ SYSCALL init_frm(int frmIdx, int pid, int type)
 		print_frm(frm_tab[frmIdx]);
 	#endif
 
+	if(type == FR_PAGE)
+	{
+		cq_enqueue(frmIdx, queueRoot); //Enqueue the frames into a circular queue on creation
+		//The queue is for the SC page replacement policy
+	}
+
 	restore(ps);
 	return OK;
 }
@@ -111,9 +117,77 @@ SYSCALL get_frm(int* avail)
  */
 SYSCALL free_frm(int i)
 {
+	STATWORD ps;
+	disable(ps);
 
-  kprintf("To be implemented!\n");
-  return OK;
+	kprintf("Free_frm(%d) Called by %s\n", i, proctab[currpid].pname);
+
+	fr_map_t fr = frm_tab[i];
+
+	if(fr.fr_type == FR_DIR)
+	{
+		#ifdef DBG_PRINT
+			kprintf("Freeing page directory\n");
+		#endif
+		clear_page_directory(i);
+		clear_frm(i); //No extra work to do for page dir
+	}
+	else if(fr.fr_type == FR_TBL)
+	{
+		#ifdef DBG_PRINT
+			kprintf("Freeing page table\n");
+		#endif
+		clear_page_table(i);
+		clear_frm(i); //No extra work to do for page table
+	}
+	else if(fr.fr_type == FR_PAGE)
+	{
+		#ifdef DBG_PRINT
+			kprintf("Freeing page\n");
+		#endif
+		//Need to write page's back to the bsm where applicable
+		int store = 0, pageth = 0;
+		if(bsm_lookup(currpid, frm_tab[i].fr_vpno, &store, &pageth) == SYSERR)
+		{
+			#ifdef DBG_PRINT
+				kprintf("Call to free_frm(%d) frees a page that has no mapping!\n", i);
+				kprintf("Assuming that it has been xunmapped previously!\n");
+			#endif
+		}
+		else
+		{
+			//Write to the backing store
+			write_bs((char *)((FRAME0 + i) * NBPG), store, pageth);
+		}
+		//Clear the data in the page
+		clear_page_table(i); //Could make another clear_page() helper but this also fills it with 0 so eh
+		clear_frm(i);
+	}
+	else
+	{
+		kprintf("\n\nsomething is wrong here\n");
+		kprintf("Attempt to call free_frm(%d) but frame has no type!\n", i);
+		return SYSERR;
+	}	
+
+	restore(ps);
+	return OK;
+}
+
+/*-------------------------------------------------------------------------
+ * clear_frm - helper function for free_frm 
+ *-------------------------------------------------------------------------
+ */
+SYSCALL clear_frm(int i)
+{
+	fr_map_t *fr = &frm_tab[i];
+	
+	fr->fr_status	= FRM_UNMAPPED;
+	fr->fr_pid	= NPROC;
+	fr->fr_vpno	= -1;
+	fr->fr_refcnt	= 0;
+	fr->fr_type	= FR_INIT;
+	fr->fr_dirty	= DIRTY;
 }
 
 /*-------------------------------------------------------------------------
@@ -155,26 +229,32 @@ SYSCALL find_frm(int pid, int vpno, int type, int *frmIdx)
  */
 void print_frm(fr_map_t frame)
 {
-	kprintf("fr_status:\t%d\n", frame.fr_status);
+	kprintf("fr_status:\t%s\n", frame.fr_status == FRM_UNMAPPED ? "Unmapped" : "Mapped");
 	kprintf("fr_pid:\t\t%d\n", frame.fr_pid);
 	kprintf("fr_vpno:\t%d\n", frame.fr_vpno);
 	kprintf("fr_refcnt:\t%d\n", frame.fr_refcnt);
-	kprintf("fr_type:\t%d\n", frame.fr_type);
-	kprintf("fr_dirty:\t%d\n", frame.fr_dirty);
+	kprintf("fr_type:\t%s\n", frame.fr_type == FR_DIR ? "Page Directory" : frame.fr_type == FR_TBL ? "Page Table" : "Page");
+	kprintf("fr_dirty:\t%s\n", frame.fr_dirty == DIRTY ? "Dirty" : "Clean");
 }
 
+/*-------------------------------------------------------------------------
+ * print_frm_contents - print all the data in a frame char by char
+ *	frameIdx - the frame whose contents will be printed 
+ *-------------------------------------------------------------------------
+ */
 void print_frm_contents(int frameIdx)
 {
 	STATWORD ps;
 	disable(ps);
 
 	int i = 0;
-	unsigned char *address = (unsigned char *)((FRAME0 + frameIdx) * NBPG);
-	unsigned char data;
+	unsigned int *address = (unsigned char *)((FRAME0 + frameIdx) * NBPG);
+	unsigned long data;
 	for(; i < NEPG * 2; i++)
 	{
 		data = *address;
-		kprintf("0x%08X: %c\n", address, data);
+		kprintf("0x%08X: ", address);
+		dump32(data);
 		address++; 
 	}
 
