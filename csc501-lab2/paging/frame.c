@@ -120,7 +120,9 @@ SYSCALL free_frm(int i)
 	STATWORD ps;
 	disable(ps);
 
-	kprintf("Free_frm(%d) Called by %s\n", i, proctab[currpid].pname);
+	#ifdef DBG_PRINT
+		kprintf("Free_frm(%d) Called by %s\n", i, proctab[currpid].pname);
+	#endif
 
 	fr_map_t fr = frm_tab[i];
 
@@ -147,7 +149,7 @@ SYSCALL free_frm(int i)
 		#endif
 		//Need to write page's back to the bsm where applicable
 		int store = 0, pageth = 0;
-		if(bsm_lookup(currpid, frm_tab[i].fr_vpno, &store, &pageth) == SYSERR)
+		if(bsm_lookup(currpid, frm_tab[i].fr_vpno * NBPG, &store, &pageth) == SYSERR)
 		{
 			#ifdef DBG_PRINT
 				kprintf("Call to free_frm(%d) frees a page that has no mapping!\n", i);

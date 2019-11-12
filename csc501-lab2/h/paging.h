@@ -61,6 +61,7 @@ typedef struct{
   int fr_refcnt;			/* reference count		*/
   int fr_type;				/* FR_DIR, FR_TBL, FR_PAGE	*/
   int fr_dirty;
+  int fr_parent;			/* Parent frame, the frame that points to this one, I.E. FR_TBL to FR_PG */
 }fr_map_t;
 
 extern bs_map_t bsm_tab[];
@@ -84,7 +85,7 @@ SYSCALL write_bs(char *, bsd_t, int);
 #define NBPG		4096	/* number of bytes per page	*/
 #define NEPG		1024	/* number of entries per page	*/
 #define FRAME0		1024	/* zero-th frame		*/
-#define NFRAMES 	30	/* number of frames		*/
+#define NFRAMES 	25	/* number of frames		*/
 #define VIRTMEMSTART	4096	/* start of virtual memory	*/
 
 #define BSM_UNMAPPED	0

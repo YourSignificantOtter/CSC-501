@@ -266,7 +266,18 @@ void print_bsm(bs_map_t bs)
 	kprintf("bs_status:\t%d\n", bs.bs_status);
 	int i = 0;
 	for(; i < NPROC; i++)
-		kprintf("bs_pid[%d]:\t%d\n", i, bs.bs_pid[i]);
+	{
+		kprintf("%02d  ", i);
+	}
+
+	kprintf("\n");
+	i = 0;
+	for(; i < NPROC; i++)
+	{
+		kprintf("%02d  ", bs.bs_pid[i]);			
+	}
+
+	kprintf("\n");
 	kprintf("bs_vpno:\t%d\n", bs.bs_vpno);
 	kprintf("bs_npages:\t%d\n", bs.bs_npages); 
 	kprintf("bs_private:\t%d\n", bs.bs_private);

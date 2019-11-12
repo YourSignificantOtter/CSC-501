@@ -63,13 +63,16 @@ SYSCALL pfint()
 		{
 			#ifdef DBG_PRINT
 				kprintf("Obtain new frame failed!\n");
-				kprintf("Implement page replacement policies!\n");
 			#endif
-			pagereplace(badAddr);
+			pagereplace(badAddr, &newFrame);
+			#ifdef DBG_PRINT
+				kprintf("Page replacement performed\n");
+			#endif
 		}
 
 		//initialize the new frame as a page table
 		init_frm(newFrame, currpid, FR_TBL);
+		frm_tab[newFrame].fr_parent = ((unsigned int)pdbr / NBPG) - FRAME0; //Tell this page table what page directory is pointing at it
 		newPt = (FRAME0 + newFrame) * NBPG; //Get the address for the new Page table
 		init_pt(newPt);//Initialize the page table
 		
@@ -108,14 +111,17 @@ SYSCALL pfint()
 		{
 			#ifdef DBG_PRINT
 				kprintf("Ran out of frames\n");
-				kprintf("Perform page replacement\n");
 			#endif
-			pagereplace(badAddr);
+			pagereplace(badAddr, &pageFrame);
+			#ifdef DBG_PRINT
+				kprintf("Page replacement performed\n");
+			#endif
 		}
 
 		//Initialize the frame to be a page
 		init_frm(pageFrame, currpid, FR_PAGE);
 		frm_tab[pageFrame].fr_vpno = virtualPage;
+		frm_tab[pageFrame].fr_parent = ((unsigned int)pageTable / NBPG) - FRAME0; //Tell this page what page table points at it
 
 		//Copy the backing store information into the new page
 		read_bs((FRAME0 + pageFrame) * NBPG, store, pageth);

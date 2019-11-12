@@ -10,7 +10,7 @@ void init_circular_queue(c_q_entry_t *queueRoot)
 		kprintf("Creating a circular queue\n");
 	#endif
 
-	queueRoot->data = SYSERR;
+	queueRoot->data = 0xDEADBEEF; //Magic number :)
 	queueRoot->next = NULL;
 	queueRoot->prev = NULL;
 }
@@ -48,11 +48,47 @@ int cq_enqueue(int data, c_q_entry_t *queueRoot)
 	restore(ps);
 }
 
-int cq_dequeue(int index, c_q_entry_t *queueRoot)
+int cq_dequeue(int data, c_q_entry_t *queueRoot)
 {
+	STATWORD ps;
+	disable(ps);
+
 	#ifdef DBG_PRINT
-		kprintf("Dequeueing index %d from the circular queue\n", index);
+		kprintf("Dequeueing data %d from the circular queue\n", data);
 	#endif
+
+	c_q_entry_t *iter = queueRoot->next;
+	int i = 0;
+
+	do{
+		if(iter->data == data)
+		{
+			//remove this entry
+			c_q_entry_t *temp = iter->prev;
+			temp->next = iter->next;
+			temp = iter->next;
+			temp->prev = iter->prev;
+			//I think this is right?
+			freemem((struct mblock *)iter, sizeof(c_q_entry_t *));
+
+			return OK;
+		}
+		else
+		{
+			//Just keep swimming
+			i++;
+			iter = iter->next;
+		}
+	}while(iter != queueRoot);
+
+	//If we got to this point the dequeue failed
+	#ifdef DBG_PRINT
+		kprintf("Call to cq_dequeue with data: %d failed! value not found in queue\n", data);
+	#endif
+
+	return SYSERR;
+
+	restore(ps);
 }
 
 void cq_print(c_q_entry_t *queueRoot)
@@ -64,6 +100,7 @@ void cq_print(c_q_entry_t *queueRoot)
 	do{
 		kprintf("%d'th entry data: %d\n", i, iter->data);
 		iter = iter->next;
+		i++;
 	}while(iter != queueRoot);
 	restore(ps);
 }
