@@ -91,6 +91,41 @@ int cq_dequeue(int data, c_q_entry_t *queueRoot)
 	restore(ps);
 }
 
+int cq_replace(int toReplace, int newData, c_q_entry_t *queueRoot)
+{
+	STATWORD ps;
+	disable(ps);
+
+	#ifdef DBG_PRINT
+		kprintf("Replacing data %d with new data %d in circular queue\n", toReplace, newData);
+	#endif
+
+	c_q_entry_t *iter = queueRoot->next;
+	int i = 0;
+
+	do
+	{
+		if(iter->data == toReplace)
+		{
+			#ifdef DBG_PRINT
+				kprintf("Found queue entry to replace at position %d\n", i);
+			#endif
+
+			iter->data = newData; //its that easy?
+			return OK;
+		}
+		i++;	
+		iter = iter->next;
+	}while(iter != queueRoot);
+
+	#ifdef DBG_PRINT
+		kprintf("Could not find data %d in the queue, no replacement performed!\n", toReplace);
+	#endif
+
+	restore(ps);
+	return SYSERR;
+}
+
 void cq_print(c_q_entry_t *queueRoot)
 {
 	STATWORD ps;

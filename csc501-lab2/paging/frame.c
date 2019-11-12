@@ -139,6 +139,19 @@ SYSCALL free_frm(int i)
 		#ifdef DBG_PRINT
 			kprintf("Freeing page table\n");
 		#endif
+		//Tell the page directory this page table isnt here anymore
+		int pageDirectoryIdx = -1;
+		pd_t *pd = (pd_t *)((FRAME0 + fr.fr_parent) * NBPG);
+		if(find_page_directory_entry(i, &pageDirectoryIdx, pd) == SYSERR)
+		{
+			#ifdef DBG_PRINT
+				kprintf("free_frm(%d) attempts to free a page table that has no related page directory entry!\n", i);
+			#endif
+		}
+		else
+		{
+			pd[pageDirectoryIdx].pd_pres = 0; //Tell the page direcotry this page table is no longer present
+		}
 		clear_page_table(i);
 		clear_frm(i); //No extra work to do for page table
 	}
@@ -160,6 +173,19 @@ SYSCALL free_frm(int i)
 		{
 			//Write to the backing store
 			write_bs((char *)((FRAME0 + i) * NBPG), store, pageth);
+		}
+		//Tell the page table this page is no longer here
+		int pageTableIdx = -1;
+		pt_t *pt = (pt_t *)((FRAME0 + fr.fr_parent) * NBPG);
+		if(find_page_table_entry(FRAME0 + i, &pageTableIdx, pt) == SYSERR)
+		{
+			#ifdef DBG_PRINT
+				kprintf("free_frm(%d) attempts to free a page that has no related page table entry\n", i);
+			#endif
+		}
+		else
+		{
+			pt[pageTableIdx].pt_pres = 0; //Tell the page table this page is no longer available
 		}
 		//Clear the data in the page
 		clear_page_table(i); //Could make another clear_page() helper but this also fills it with 0 so eh

@@ -10,6 +10,7 @@ typedef struct {
 void init_circular_queue(c_q_entry_t *queueRoot);
 int cq_enqueue(int data, c_q_entry_t *queueRoot); //Push new element into the queue
 int cq_dequeue(int data, c_q_entry_t *queueRoot); //Remove an element from the queue by data
+int cq_replace(int toReplace, int newData, c_q_entry_t *queueRoot); //Replace an element from the queue by data
 void cq_print(c_q_entry_t *queueRoot); //Print the queue data
 
 #endif

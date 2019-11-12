@@ -99,6 +99,31 @@ void clear_page_directory(int frameIdx)
 	restore(ps);
 }
 
+
+SYSCALL find_page_directory_entry(int vpno, int *pageDirectoryIdx, pd_t *pd)
+{
+	STATWORD ps;
+	disable(ps);
+
+	int i = 0;
+	for(; i < NEPG; i++)
+	{
+		if(pd[i].pd_base == vpno)
+		{
+			*pageDirectoryIdx = i;
+			return OK;
+		}
+	}
+
+	#ifdef DBG_PRINT
+		kprintf("find_page_directory_entry(%d, %d, 0x%08X) did not find an entry!\n", vpno, *pageDirectoryIdx, pd);
+	#endif
+
+	*pageDirectoryIdx = SYSERR;
+	restore(ps);
+	return SYSERR;
+}
+
 /*------------------------------------------------------------------------
  * dump_page_directory - prints a processes page directory
  *	pid - the process ID of the page directory to dump

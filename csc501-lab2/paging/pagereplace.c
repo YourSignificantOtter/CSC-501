@@ -30,6 +30,7 @@ SYSCALL pagereplace(unsigned long address, unsigned int *freePageIdx)
 
 		if(queueRoot->next == NULL)
 		{
+			cq_print(queueRoot);
 			kprintf("The SC queue is empty, I assume this means the frames are full of page tables and directories\n");
 			return SYSERR;
 		}
@@ -72,11 +73,6 @@ SYSCALL pagereplace(unsigned long address, unsigned int *freePageIdx)
 					//Mark the page table entry pointing to this page as no longer present
 					pt[pageTableIdx].pt_pres = 0;
 
-					//If the page table belongs to the current process invalidate the TLB
-					if(currpid == frm_tab[iter->data].fr_pid)
-						write_cr3(proctab[currpid].pdbr); //Writing CR3 invalidates all of TLB
-						//Big performance hit but just need something functioning for now
-
 					//In inverted table decrease refcnt for page table pointing to this page
 					frm_tab[pt_frame].fr_refcnt--;
 
@@ -93,14 +89,16 @@ SYSCALL pagereplace(unsigned long address, unsigned int *freePageIdx)
 					}
 
 					//Check the dirty bit for the page
+					cq_replace(iter->data, iter->data, queueRoot);
+					free_frm(iter->data);
+/*
 					if(frm_tab[iter->data].fr_dirty == DIRTY)
 					{
 						#ifdef DBG_PRINT
 							kprintf("Frame %d is dirty, writing it to backing store before freeing it\n", iter->data);
 						#endif
-
-						//remove the page from the circular queue
-						cq_dequeue(iter->data, queueRoot);
+						cq_replace(iter->data, iter->data, queueRoot); //I dont think this is needed?
+						//Since we are returning the frame we just cleared as the new one its just replacing itself
 						free_frm(iter->data);
 
 					}
@@ -110,10 +108,11 @@ SYSCALL pagereplace(unsigned long address, unsigned int *freePageIdx)
 						#ifdef DBG_PRINT
 							kprintf("Frame %d is not dirty, freeing the frame\n");
 						#endif
-						cq_dequeue(iter->data, queueRoot);
+						cq_replace(iter->data, iter->data, queueRoot);
 						clear_page_table(iter->data);
 						clear_frm(iter->data);
 					}
+*/
 					*freePageIdx = iter->data;		
 					done = 1;
 					break; //Stop looping, the replacement is completed
@@ -148,6 +147,9 @@ SYSCALL pagereplace(unsigned long address, unsigned int *freePageIdx)
 	#ifdef DBG_PRINT
 		kprintf("Page replacement with policy %s complete!\n", policy == SC ? "SC" : "Aging");
 	#endif
+
+	write_cr3(proctab[currpid].pdbr); //Writing CR3 invalidates all of TLB
+	//Big performance hit but just need something functioning for now
 
 	return OK;
 }

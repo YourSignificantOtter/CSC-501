@@ -140,14 +140,14 @@ SYSCALL bsm_lookup(int pid, long vaddr, int* store, int* pageth)
 
 		if(bs->bs_pid[pid] == TRUE) //This pid is using this backing store
 		{
-			#ifdef DBG_PRINT
-				kprintf("bsm_lookup i: %d\tvpno: %04X\tbs_vpno: %04X\tbs_npages: %d\n", i, vpno, bs->bs_vpno, bs->bs_npages);
-			#endif
-
 			if(vpno >= bs->bs_vpno)
 			{
 				if(vpno < (bs->bs_vpno + bs->bs_npages)) //The given address is inside THIS backing store
 				{
+					#ifdef DBG_PRINT
+						kprintf("bsm_lookup i: %d\tvpno: %04X\tbs_vpno: %04X\tbs_npages: %d\n", i, vpno, bs->bs_vpno, bs->bs_npages);
+					#endif
+
 					*store = i;
 					*pageth = vpno - bs->bs_vpno; //the page within the backing store
 					return OK; //stop looking we already found it

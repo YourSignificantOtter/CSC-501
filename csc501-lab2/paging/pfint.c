@@ -43,7 +43,7 @@ SYSCALL pfint()
 	unsigned int pageTableIdx	= vaddr->pt_offset;
 	unsigned int pageOffset		= vaddr->pg_offset;
 
-//	kprintf("pageDirectoryIdx: %d\tpageTableIdx: %d\tpageOffset: %d\n", pageDirectoryIdx, pageTableIdx, pageOffset);
+//	kprintf("Addr: 0x%08X\tvpno: %d\tpageDirectoryIdx: %d\tpageTableIdx: %d\tpageOffset: %d\n", badAddr, virtualPage, pageDirectoryIdx, pageTableIdx, pageOffset);
 //	dump_page_directory(currpid);
 
 
@@ -113,17 +113,27 @@ SYSCALL pfint()
 				kprintf("Ran out of frames\n");
 			#endif
 			pagereplace(badAddr, &pageFrame);
+			//I feel there is a better way to do this but eh
+			frm_tab[pageFrame].fr_status	= FRM_MAPPED;
+			frm_tab[pageFrame].fr_pid	= currpid;
+			frm_tab[pageFrame].fr_refcnt	= 1;
+			frm_tab[pageFrame].fr_type	= FR_PAGE;
+			frm_tab[pageFrame].fr_dirty	= CLEAN;
 			#ifdef DBG_PRINT
 				kprintf("Page replacement performed\n");
 			#endif
 		}
+		else
+		{
+			//Initialize the frame to be a page
+			init_frm(pageFrame, currpid, FR_PAGE);
+		}
 
-		//Initialize the frame to be a page
-		init_frm(pageFrame, currpid, FR_PAGE);
-		frm_tab[pageFrame].fr_vpno = virtualPage;
-		frm_tab[pageFrame].fr_parent = ((unsigned int)pageTable / NBPG) - FRAME0; //Tell this page what page table points at it
+		frm_tab[pageFrame].fr_vpno	= virtualPage;
+		frm_tab[pageFrame].fr_parent	= ((unsigned int)pageTable / NBPG) - FRAME0; //Tell this page what page table points at it
 
 		//Copy the backing store information into the new page
+//		kprintf("read_bs(%d, %d, %d)\n", pageFrame, store, pageth);
 		read_bs((FRAME0 + pageFrame) * NBPG, store, pageth);
 
 	 	//Update the page table entry to show the new page table 
@@ -142,11 +152,11 @@ SYSCALL pfint()
 	
 	if(find_frm(currpid, virtualPage, FR_PAGE, &pageFrame) == SYSERR)
 	{
-		#ifdef DBG_PRINT
-			kprintf("The page frame could not be found!\n");
-		#endif
-		while(1)
-			;
+		kprintf("The page frame could not be found!\n");
+		kprintf("Killing the process!\n");
+		kill(currpid);
+		restore(ps);
+		return SYSERR;		
 	}
 
 	#ifdef DBG_PRINT
