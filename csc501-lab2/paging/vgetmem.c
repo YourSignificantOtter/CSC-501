@@ -12,9 +12,14 @@ extern struct pentry proctab[];
  *	nbytes - the number of bytes to be allocated
  *------------------------------------------------------------------------
  */
-WORD	*vgetmem(nbytes)
-	unsigned nbytes;
+WORD	*vgetmem(unsigned int nbytes)
 {
+	#ifdef DBG_PRINT
+		kprintf("Attempting to allocate %d bytes of process %s's virtual heap\n", nbytes, proctab[currpid].pname);
+	#endif
+
+	
+
 	kprintf("To be implemented!\n");
 	return( SYSERR );
 }

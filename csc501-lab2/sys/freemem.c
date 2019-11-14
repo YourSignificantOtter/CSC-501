@@ -17,7 +17,10 @@ SYSCALL	freemem(struct mblock *block, unsigned size)
 
 	if (size==0 || (unsigned)block>(unsigned)maxaddr
 	    || ((unsigned)block)<((unsigned) &end))
+	{
+//		kprintf("first return\n");
 		return(SYSERR);
+	}
 	size = (unsigned)roundmb(size);
 	disable(ps);
 	for( p=memlist.mnext,q= &memlist;
@@ -26,6 +29,7 @@ SYSCALL	freemem(struct mblock *block, unsigned size)
 		;
 	if (((top=q->mlen+(unsigned)q)>(unsigned)block && q!= &memlist) ||
 	    (p!=NULL && (size+(unsigned)block) > (unsigned)p )) {
+//		kprintf("Second return\n");
 		restore(ps);
 		return(SYSERR);
 	}

@@ -64,17 +64,26 @@ SYSCALL vcreate(procaddr,ssize,hsize,priority,name,nargs,args)
 	//Set the private store information in the process stucture
 	struct pentry *pptr = &proctab[pid];
 	pptr->store = privateHeap;
-	pptr->vhpnpages = hsize;
 
 	//Map the backing store
 	int pageNum = VIRTMEMSTART; //How can we handle multiple calls to vcreate?
-	bsm_map(pid, pageNum, privateHeap, hsize);
+	if(xmmap(pageNum, privateHeap, hsize) == SYSERR)
+	{
+		kprintf("Could not map private heap to process %s in vcreate!\n", name);
+		kprintf("Killing process!\n");
+		kill(pid);
+		restore(ps);
+		return SYSERR;
+	}
+	pptr->vhpno = pageNum;
+	pptr->vhpnpages = hsize;
+	pptr->vmemlist = (struct mblock *)(BACKING_STORE_BASE + privateHeap * BACKING_STORE_UNIT_SIZE);
 	bsm_tab[privateHeap].bs_private = BSM_PRIVATE; //Set the backing store to be private, bsm_map defaults to public
 
 	//TODO: Add memlist stuff here
 
 	restore(ps);
-	return OK;
+	return pid;
 }
 
 /*------------------------------------------------------------------------

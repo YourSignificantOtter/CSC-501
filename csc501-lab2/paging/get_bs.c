@@ -46,7 +46,7 @@ int get_bs(bsd_t bs_id, unsigned int npages) {
 		#endif
 		//This backing store is not mapped to anything return the passed number of npages
 		//Do we need bsm_map here?
-		bs->bs_status = BSM_MAPPED;
+		//bs->bs_status = BSM_MAPPED;
 		retVal = npages;
 	}
 	else

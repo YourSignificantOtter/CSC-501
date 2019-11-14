@@ -43,6 +43,7 @@ SYSCALL xmmap(int virtpage, bsd_t source, int npages)
 	}
 
 	//the BSM must be mapped already
+/*
 	bs_map_t *bs = &bsm_tab[source];
 	if(bs->bs_status == BSM_UNMAPPED)
 	{
@@ -52,7 +53,7 @@ SYSCALL xmmap(int virtpage, bsd_t source, int npages)
 		restore(ps);
 		return SYSERR;
 	}
-
+*/
 	//Attempt to create mapping
 	if(bsm_map(currpid, virtpage, source, npages) == SYSERR)
 	{

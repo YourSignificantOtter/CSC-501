@@ -13,15 +13,16 @@ Bool pageReplaceDebug = FALSE;
  */
 SYSCALL srpolicy(int policy)
 {
-	if(policy != SC || policy != AGING)
+	pageReplaceDebug = TRUE;
+
+	if(policy == SC || policy == AGING)
 	{
-		kprintf("srpolicy(%d) invalid policy input, defaulting to SC!\n");
-		page_replace_policy = SC;
+		page_replace_policy = policy;
 	}
 	else
 	{
-		page_replace_policy = policy;
-		pageReplaceDebug = TRUE;
+		kprintf("srpolicy(%d) invalid policy input, defaulting to SC!\n");
+		page_replace_policy = SC;
 	}
 
 	return OK;

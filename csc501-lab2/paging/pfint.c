@@ -119,6 +119,7 @@ SYSCALL pfint()
 			frm_tab[pageFrame].fr_refcnt	= 1;
 			frm_tab[pageFrame].fr_type	= FR_PAGE;
 			frm_tab[pageFrame].fr_dirty	= CLEAN;
+			frm_tab[pageFrame].fr_age	= 0;			
 			#ifdef DBG_PRINT
 				kprintf("Page replacement performed\n");
 			#endif
@@ -133,8 +134,8 @@ SYSCALL pfint()
 		frm_tab[pageFrame].fr_parent	= ((unsigned int)pageTable / NBPG) - FRAME0; //Tell this page what page table points at it
 
 		//Copy the backing store information into the new page
-//		kprintf("read_bs(%d, %d, %d)\n", pageFrame, store, pageth);
 		read_bs((FRAME0 + pageFrame) * NBPG, store, pageth);
+		frm_tab[pageFrame].fr_dirty = DIRTY;
 
 	 	//Update the page table entry to show the new page table 
 		pageTable[pageTableIdx].pt_pres = 1;

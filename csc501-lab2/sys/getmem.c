@@ -16,6 +16,7 @@ WORD *getmem(unsigned nbytes)
 
 	disable(ps);
 	if (nbytes==0 || memlist.mnext== (struct mblock *) NULL) {
+		kprintf("get mem first return\n");
 		restore(ps);
 		return( (WORD *)SYSERR);
 	}
@@ -35,6 +36,7 @@ WORD *getmem(unsigned nbytes)
 			restore(ps);
 			return( (WORD *)p );
 		}
+	kprintf("Second error return\n");
 	restore(ps);
 	return( (WORD *)SYSERR );
 }

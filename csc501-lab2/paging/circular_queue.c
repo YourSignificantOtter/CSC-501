@@ -2,7 +2,7 @@
 #include "paging.h"
 #include "circular_queue.h"
 
-c_q_entry_t *queueRoot;
+c_q_entry_t *cq_queueRoot;
 
 void init_circular_queue(c_q_entry_t *queueRoot)
 {
@@ -124,6 +124,27 @@ int cq_replace(int toReplace, int newData, c_q_entry_t *queueRoot)
 
 	restore(ps);
 	return SYSERR;
+}
+
+void cq_clear(c_q_entry_t *queueRoot)
+{
+	STATWORD ps;
+	disable(ps);
+
+	c_q_entry_t *iter = queueRoot->next;
+	c_q_entry_t *next;
+	int i = 0;
+	do
+	{
+		next = iter->next;
+		freemem((struct mblock *)iter, sizeof(c_q_entry_t));
+		iter = next;
+		i++;
+	}while(iter != queueRoot);
+
+	freemem((struct mblock *)queueRoot, sizeof(c_q_entry_t));
+
+	restore(ps);
 }
 
 void cq_print(c_q_entry_t *queueRoot)

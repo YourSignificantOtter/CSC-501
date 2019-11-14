@@ -28,6 +28,7 @@ SYSCALL init_frm_table()
 		frm_tab[i].fr_refcnt	= 0;
 		frm_tab[i].fr_type	= FR_INIT;
 		frm_tab[i].fr_dirty	= DIRTY;
+		frm_tab[i].fr_age	= 0;
 
 		#ifdef DBG_PRINT
 			if(i % 100 == 0)
@@ -65,6 +66,7 @@ SYSCALL init_frm(int frmIdx, int pid, int type)
 	frm_tab[frmIdx].fr_refcnt = 1;
 	frm_tab[frmIdx].fr_type = type;
 	frm_tab[frmIdx].fr_dirty = CLEAN;
+	frm_tab[frmIdx].fr_age = 0;
 
 	#ifdef DBG_PRINT
 		kprintf("Frame %d initialized\n", frmIdx);
@@ -73,8 +75,8 @@ SYSCALL init_frm(int frmIdx, int pid, int type)
 
 	if(type == FR_PAGE)
 	{
-		cq_enqueue(frmIdx, queueRoot); //Enqueue the frames into a circular queue on creation
-		//The queue is for the SC page replacement policy
+		cq_enqueue(frmIdx, cq_queueRoot); //Enqueue the frames into a circular queue on creation for SC
+		fq_enqueue(frmIdx, fq_head, fq_tail); //Enqueue the frames into a fifo queue on creation for AGING
 	}
 
 	restore(ps);
@@ -172,7 +174,8 @@ SYSCALL free_frm(int i)
 		else
 		{
 			//Write to the backing store
-			write_bs((char *)((FRAME0 + i) * NBPG), store, pageth);
+			if(frm_tab[i].fr_dirty == DIRTY)
+				write_bs((char *)((FRAME0 + i) * NBPG), store, pageth);
 		}
 		//Tell the page table this page is no longer here
 		int pageTableIdx = -1;
@@ -216,6 +219,8 @@ SYSCALL clear_frm(int i)
 	fr->fr_refcnt	= 0;
 	fr->fr_type	= FR_INIT;
 	fr->fr_dirty	= DIRTY;
+	fr->fr_parent	= 0;
+	fr->fr_age	= 0;
 }
 
 /*-------------------------------------------------------------------------
@@ -263,6 +268,8 @@ void print_frm(fr_map_t frame)
 	kprintf("fr_refcnt:\t%d\n", frame.fr_refcnt);
 	kprintf("fr_type:\t%s\n", frame.fr_type == FR_DIR ? "Page Directory" : frame.fr_type == FR_TBL ? "Page Table" : "Page");
 	kprintf("fr_dirty:\t%s\n", frame.fr_dirty == DIRTY ? "Dirty" : "Clean");
+	kprintf("fr_parent:\t%d\n", frame.fr_parent);
+	kprintf("fr_age:\t\t%d\n", frame.fr_age);
 }
 
 /*-------------------------------------------------------------------------

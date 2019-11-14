@@ -2,6 +2,7 @@
 
 #include <kernel.h>
 #include "circular_queue.h"
+#include "fifo_queue.h"
 
 typedef unsigned int	 bsd_t;
 
@@ -62,12 +63,15 @@ typedef struct{
   int fr_type;				/* FR_DIR, FR_TBL, FR_PAGE	*/
   int fr_dirty;
   int fr_parent;			/* Parent frame, the frame that points to this one, I.E. FR_TBL to FR_PG */
+  int fr_age;				/* age of a frame, used for AGING page replacement */
 }fr_map_t;
 
 extern bs_map_t bsm_tab[];
 extern fr_map_t frm_tab[];
 extern int g_pt[];
-extern c_q_entry_t *queueRoot;
+extern c_q_entry_t *cq_queueRoot;
+extern f_q_entry_t *fq_head;
+extern f_q_entry_t *fq_tail;
 extern Bool pageReplaceDebug;
 
 /* Prototypes for required API calls */

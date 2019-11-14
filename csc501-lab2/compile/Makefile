@@ -58,7 +58,8 @@ PG  =   get_bs.c        release_bs.c    read_bs.c       write_bs.c      \
         control_reg.c   bsm.c           policy.c        \
         frame.c         pfint.c         dump32.c        vcreate.c       \
         xm.c            vgetmem.c       vfreemem.c	pagedir.c	\
-	pagetab.c	pagereplace.c	circular_queue.c
+	pagetab.c	pagereplace.c	circular_queue.c		\
+	fifo_queue.c
 
 SRC = ${COM} ${TTY} ${MON} ${SYS}
 

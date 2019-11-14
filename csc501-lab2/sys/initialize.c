@@ -12,6 +12,7 @@
 #include <io.h>
 
 #include <circular_queue.h>
+#include <fifo_queue.h>
 #include <paging.h>
 
 /*#define DETAIL */
@@ -269,7 +270,13 @@ sysinit()
 	rdytail = 1 + (rdyhead=newqueue());/* initialize ready list */
 
 	//Create a circular queue for SC page replacement policy
-	//init_circular_queue(queueRoot);
+	cq_queueRoot = (c_q_entry_t *)getmem(sizeof(c_q_entry_t));
+	init_circular_queue(cq_queueRoot);
+	//Create a ffo queue for AGING page replacement policy
+	fq_head = (f_q_entry_t *)getmem(sizeof(f_q_entry_t));
+	fq_tail = (f_q_entry_t *)getmem(sizeof(f_q_entry_t));
+	init_fifo_queue(fq_head, fq_tail);
+	kprintf("initialize, head: 0x%08X\ttail: 0x%08X\n", fq_head, fq_tail);
 
 	//Create the page directory for NULL
 	unsigned int PDBR = create_page_directory(NULLPROC);

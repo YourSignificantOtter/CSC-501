@@ -3,7 +3,7 @@
 #ifndef _KERNEL_H_
 #define _KERNEL_H_
 
-//#define DBG_PRINT
+#define DBG_PRINT
 
 /* Symbolic constants used throughout Xinu */
 
