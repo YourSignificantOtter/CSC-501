@@ -78,11 +78,11 @@ SYSCALL vcreate(procaddr,ssize,hsize,priority,name,nargs,args)
 	pptr->vhpno = pageNum;
 	pptr->vhpnpages = hsize;
 	pptr->vmemlist = (struct mblock *)(BACKING_STORE_BASE + privateHeap * BACKING_STORE_UNIT_SIZE);
-	vm_ptr_t vmInfo;
+	vh_ptr_t vmInfo;
 	vmInfo.vm_size = pptr->vhpnpages * NBPG;
 	vmInfo.vm_magic_next = 0;
-	*(vm_ptr_t *)pptr->vmemlist = vmInfo;
-	pptr->vhused = sizeof(vm_ptr_t);
+	*(vh_ptr_t *)pptr->vmemlist = vmInfo;
+	pptr->vhused = sizeof(vh_ptr_t);
 	bsm_tab[privateHeap].bs_private = BSM_PRIVATE; //Set the backing store to be private, bsm_map defaults to public
 
 	restore(ps);

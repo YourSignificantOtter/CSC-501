@@ -68,8 +68,8 @@ typedef struct{
 
 typedef struct{
   unsigned int vm_size;			/* the size of the allocated mem in BYTES */
-  unsigned int vm_magic_next;		/* Magic number should be equal to VM_MAGIC, next is the address of the next vm_ptr_t in the list*/
-}vm_ptr_t;
+  unsigned int vm_magic_next;		/* Magic number should be equal to VM_MAGIC, next is the address of the next vh_ptr_t in the list*/
+}vh_ptr_t;
 
 extern bs_map_t bsm_tab[];
 extern fr_map_t frm_tab[];

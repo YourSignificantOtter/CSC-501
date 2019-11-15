@@ -66,8 +66,8 @@ void proc1_test2(char *msg, int lck) {
 	
 
 	vfreemem(y, 1024);
-	vfreemem(x, 1024);
-	vfreemem(z, 4000);
+	vfreemem(x, -5);
+	vfreemem(z, 3);
 }
 
 void proc1_test3(char *msg, int lck) {
