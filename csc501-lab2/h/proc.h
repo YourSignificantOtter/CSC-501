@@ -76,6 +76,7 @@ struct	pentry	{
         int     store;                  /* backing store for vheap      */
         int     vhpno;                  /* starting pageno for vheap    */
         int     vhpnpages;              /* vheap size                   */
+	int	vhused;			/* amount of virtual heap bytes currently allocated */
         struct mblock *vmemlist;        /* vheap list              	*/
 };
 

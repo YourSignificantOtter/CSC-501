@@ -66,6 +66,11 @@ typedef struct{
   int fr_age;				/* age of a frame, used for AGING page replacement */
 }fr_map_t;
 
+typedef struct{
+  unsigned int vm_size;			/* the size of the allocated mem in BYTES */
+  unsigned int vm_magic_next;		/* Magic number should be equal to VM_MAGIC, next is the address of the next vm_ptr_t in the list*/
+}vm_ptr_t;
+
 extern bs_map_t bsm_tab[];
 extern fr_map_t frm_tab[];
 extern int g_pt[];
@@ -89,7 +94,7 @@ SYSCALL write_bs(char *, bsd_t, int);
 #define NBPG		4096	/* number of bytes per page	*/
 #define NEPG		1024	/* number of entries per page	*/
 #define FRAME0		1024	/* zero-th frame		*/
-#define NFRAMES 	25	/* number of frames		*/
+#define NFRAMES 	1024	/* number of frames		*/
 #define VIRTMEMSTART	4096	/* start of virtual memory	*/
 
 #define BSM_UNMAPPED	0
@@ -124,6 +129,8 @@ SYSCALL write_bs(char *, bsd_t, int);
 #define PAGE_TABLE_NUM_SHIFT	22
 #define PAGE_NUM_SHIFT		12
 #define OFFSET_SHIFT		0
+
+#define VM_MAGIC		0xDEADBEEF
 
 void enable_paging();
 void write_cr3(unsigned long n);
