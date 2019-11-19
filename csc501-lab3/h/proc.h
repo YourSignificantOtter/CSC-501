@@ -60,6 +60,12 @@ struct	pentry	{
 	int	fildes[_NFILE];		/* file - device translation	*/
 	int	ppagedev;		/* pageing dgram device		*/
 	int	pwaitret;
+
+	// PA3 ADDITONS BELOW THIS 
+	int	pinh;			/* inherited priority		*/
+	long	lockmask;		/* bit mask for locks		*/
+	int	lockid;			/* which lock are we waiting on	*/
+
 };
 
 

@@ -14,6 +14,8 @@
 #include <io.h>
 #include <stdio.h>
 
+#include <lock.h>	//PA3 ADDITION 
+
 /*#define DETAIL */
 #define HOLESIZE	(600)	
 #define	HOLESTART	(640 * 1024)
@@ -48,6 +50,9 @@ int	console_dev;		/* console device			*/
 
 int	rdyhead, rdytail;	/* head/tail of ready list (q indicies)	*/
 char	vers[100];		/* Xinu version printed at startup	*/
+
+
+lock_t	locks[NLOCK];		/* PA3 Addition, array of NLOCK R/Wlocks*/
 
 /************************************************************************/
 /***				NOTE:				      ***/
@@ -197,6 +202,14 @@ LOCAL int sysinit()
 	    init_dev(i);
 	}
 #endif
+
+	//PA 3 Addition
+	if(linit() == SYSERR)
+	{
+		kprintf("\n!!!!!!!!!!!!!!!!!!!!\n");
+		kprintf("Lock initialization failed! Kill system\n\n");
+		shutdown();
+	}
 
 	return(OK);
 }
