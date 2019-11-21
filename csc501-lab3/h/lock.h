@@ -12,7 +12,7 @@
 #define READ	2					/* Lock is for reading purposes		*/
 #define WRITE	3					/* Lock is for writing purposes		*/
 
-int prio_inherit(int pid, int lock);			/* Perform priority inheritance with proc
+int prio_inherit(int pid, int priority, int lock);	/* Perform priority inheritance with proc
 							pid attempting to gain lock		*/
 
 int linit(void);					/* Initialize all the system R/W Locks	*/
@@ -22,7 +22,7 @@ int lcreate(void); 					/* Create a lock, returns an ID that can
 
 int ldelete(int lockdescriptor);			/* Deletes the associated lock		*/
 int lock(int ldes1, int type, int priority);		/* Obtains a lock for read/write 	*/
-int releaseall(int numlocks, int args, ...);		/* Simulataneous release of numlocks	*/
+int releaseall(int numlocks, long args);		/* Simulataneous release of numlocks	*/
 void print_lock(int lock);				/* Print a locks info			*/
 
 typedef struct {					/* Queue node type			*/
@@ -40,8 +40,9 @@ void q_print(int lock);					/* Print a locks queue			*/
 typedef struct {					/* Lock Type				*/
 	int		status;				/* Lock Status				*/
 	int		pcount;				/* Number of processes in queue		*/
-//	int		currprio;			/* Priority of the process with lock	*/
-	long		currpids;			/* PID(s) of the process with the lock	*/
+	int		owner;				/* PID of the process that owns the lock*/
+	int		currprio;			/* Priority of the process with lock	*/
+	Bool		currpids[NPROC];		/* PID(s) of the process with the lock	*/
 	q_node_t	*head;				/* Head of the process queue		*/
 	q_node_t	*tail;				/* Tail of the process queue		*/
 } lock_t;
@@ -49,5 +50,6 @@ typedef struct {					/* Lock Type				*/
 extern lock_t locks[];					/* Table of locks			*/
 
 #define isbadlock(s)	(s < 0 || s >= NLOCK)		/* Macro to test if a lock id is bad	*/
+#define pinhpprio(p)	(p->pinh == 0 ? p->pprio : p->pinh)	/* Macro to use pinh or pprio	*/
 
 #endif

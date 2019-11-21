@@ -16,6 +16,11 @@
 #define	FDFREE		-1		/* free file descriptor */
 #define PRFREE		'\002'          /* process slot is free         */
 
+//PA3 ADDITION
+#ifndef NLOCK
+#include <lock.h>
+#endif
+
 
 /* process state constants */
 
@@ -63,7 +68,7 @@ struct	pentry	{
 
 	// PA3 ADDITONS BELOW THIS 
 	int	pinh;			/* inherited priority		*/
-	long	lockmask;		/* bit mask for locks		*/
+	Bool	plocks[NLOCK];		/* locks this process has	*/
 	int	lockid;			/* which lock are we waiting on	*/
 
 };

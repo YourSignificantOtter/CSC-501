@@ -10,7 +10,7 @@
  * returns OK or SYSERR
  * -------------------------------------------------------
  */
-int prio_inherit(int pid, int lock)
+int prio_inherit(int pid, int priority, int lock)
 {
 	if(isbadpid(pid))
 	{
@@ -32,11 +32,34 @@ int prio_inherit(int pid, int lock)
 	disable(ps);
 
 	#ifdef DBG_PRINT
-		kprintf("\n\n\tPerforming priority inheritance tasks!\n");
+		kprintf("\t\t\tPerforming priority inheritance tasks!\n");
 	#endif
 
 	struct pentry *pptr = &proctab[currpid];
 	lock_t *lk = &locks[lock];
+
+	if(priority > lk->currprio)
+	{
+		#ifdef DBG_PRINT
+				kprintf("\tCurrent lock owner %d has lower prio than %d trying to access it\n", lk->owner, currpid);
+		#endif
+
+		proctab[lk->owner].pinh = pinhpprio(pptr); //Set the lock owner prio to this prio
+
+		kprintf("\t\t!!!!!TO IMPLEMENT: TRANSATIVE PROPERTIES!!!!!\n");
+	}
+
+
+	restore(ps);
+	return OK;
+}
+
+
+
+
+
+
+/*
 
 	if(lk->status == READ)
 	{
@@ -46,15 +69,14 @@ int prio_inherit(int pid, int lock)
 	{
 		//Check priority levels
 		int lockOwner = 0;
-		int temp = lk->currpids;
-		while(temp)
+		for(; lockOwner < NPROC; lockOwner++)
 		{
-			lockOwner++;
-			temp = temp >> 1;
+			if(lk->currpids[lockOwner] == TRUE) //Thre can only be ONE writer at a time
+				break;
 		}
 
 		#ifdef DBG_PRINT
-			kprintf("lk->currpids: 0x%08X\tlockOwner: %d\n", lk->currpids, lockOwner);
+			kprintf("\tlockOwner: %d\n", lockOwner);
 		#endif
 
 		int lockOwnerPrio = 0;
@@ -98,8 +120,8 @@ int prio_inherit(int pid, int lock)
 		#endif
 		return SYSERR;
 	}	
-
-
 	restore(ps);
 	return OK;
 }
+
+*/

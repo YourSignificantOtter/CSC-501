@@ -69,8 +69,9 @@ SYSCALL create(procaddr,ssize,priority,name,nargs,args)
 
 	//PA3 ADDITIONS
 	pptr->pinh = 0;
-	pptr->lockmask = 0;
 	pptr->lockid = -1;
+	for(i = 0; i < NLOCK; i++)
+		pptr->plocks[i] = FALSE;
 
 		/* Bottom of stack */
 	*saddr = MAGIC;

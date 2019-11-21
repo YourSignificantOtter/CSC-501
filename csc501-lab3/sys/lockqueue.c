@@ -226,13 +226,13 @@ void q_print(int lock)
 	q_node_t *iter = locks[lock].head;
 	while(iter != locks[lock].tail)
 	{
-		kprintf("\tLock: %d queue index: %d prio: %d type: %s pid: %d\n", lock, i, iter->prio, iter->type == READ ? "READ" : "WRITE", iter->pid);
+		kprintf("\tLock: %d queue index: %d prio: %d type: %s pid: %d\n", lock, i, iter->prio, iter->type == READ ? "READ " : "WRITE", iter->pid);
 		i++;
 		iter = iter->next;
 	}
 
 	iter = locks[lock].tail;
-	kprintf("\tLock: %d queue index: %d prio: %d type: %s pid: %d\n", lock, i, iter->prio, iter->type == READ ? "READ" : "WRITE", iter->pid);
+	kprintf("\tLock: %d queue index: %d prio: %d type: %s pid: %d\n", lock, i, iter->prio, iter->type == READ ? "READ " : "WRITE", iter->pid);
 
 	restore(ps);
 }

@@ -19,7 +19,11 @@ int linit(void)
 		locks[i].status = INIT;	//locks are initialized
 		locks[i].pcount = 0;	//No processes are waiting for the lock
 //		locks[i].currprio = 0;
-		locks[i].currpids = 0;
+
+		int j = 0;
+		for(; j < NPROC; j++)
+			locks[i].currpids[j] = FALSE;
+
 		q_node_t *queue = getmem(sizeof(q_node_t));
 		queue->prio = -1;
 		queue->type = -1;

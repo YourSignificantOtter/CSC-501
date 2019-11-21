@@ -13,7 +13,7 @@
 int lock(int des1, int type, int priority)
 {
 	#ifdef DBG_PRINT
-		kprintf("\tprocess: %s attempting to take lock: %d as a %s with prio %d\n", proctab[currpid].pname, des1, type == READ ? "READER" : "WRITER", priority);
+		kprintf("\tprocess: %s(PID: %d) attempting to take lock: %d as a %s with prio %d\n", proctab[currpid].pname, currpid, des1, type == READ ? "READER" : "WRITER", priority);
 	#endif
 
 	//Check lock ID
@@ -48,10 +48,13 @@ int lock(int des1, int type, int priority)
 
 		//Use the lock!
 		lk->status = type;
-//		lk->currprio = priority;
-		lk->currpids = (1 << currpid);
+		lk->currprio = priority;
+		lk->currpids[currpid] = TRUE;
+		lk->owner = currpid;
 
-		print_lock(des1);
+		proctab[currpid].plocks[des1] = TRUE;
+
+		q_enqueue(priority, type, currpid, des1);
 
 		restore(ps);
 		return OK;
@@ -60,20 +63,37 @@ int lock(int des1, int type, int priority)
 	//Check if the lock is currently used as read and we want to read as well
 	if(lk->status == READ && type == READ)
 	{
-		#ifdef DBG_PRINT
-			kprintf("\tLock is currently used for reading and we want to read too, feel free to read!\n");
-		#endif
-
-		prio_inherit(currpid, des1);
-
 		q_enqueue(priority, type, currpid, des1);
-		lk->currpids |= (1 << currpid);
-		//Allow multiple readers by not blocking this process and not calling resched
+		prio_inherit(currpid, priority, des1);
 
-		print_lock(des1);
-
-		restore(ps);
-		return OK;
+		//Check if the prio >= the highest WRITE in the queue
+		q_node_t *iter = lk->head;
+		while(iter != lk->tail)
+		{
+			if(iter->type == WRITE)
+			{
+				if(priority >= iter->prio)
+				{
+					#ifdef DBG_PRINT
+						kprintf("\tNew reader added to lock\n");
+					#endif
+					lk->currpids[currpid] = TRUE;
+					restore(ps);
+					return OK;
+				}
+				else
+				{
+					#ifdef DBG_PRINT
+						kprintf("\tNew reader not added to lock, still enqueued\n");
+					#endif
+					proctab[currpid].pstate = PRWAIT;
+					proctab[currpid].pwaitret = OK;
+					resched();
+					break;
+				}
+			}
+			iter = iter->next;
+		}
 	}
 
 	if(type == WRITE)
@@ -82,18 +102,18 @@ int lock(int des1, int type, int priority)
 			kprintf("\tWrite locks are exclusive so we enqueue this request regardless of priorities.\n");
 		#endif
 
-		print_lock(des1);
+		prio_inherit(currpid, priority, des1);
 
-		prio_inherit(currpid, des1);
-
-		lk->pcount++;
+//		lk->pcount++;
 		q_enqueue(priority, type, currpid, des1);
+
 		proctab[currpid].pstate = PRWAIT; //Block the current process
+		proctab[currpid].pwaitret = OK; 
 		resched();
 	}
 
 	restore(ps);
-	return SYSERR;
+	return OK;
 }
 
 void print_lock(int lock)
@@ -103,6 +123,13 @@ void print_lock(int lock)
 
 	lock_t *lk = &locks[lock];
 
-//	kprintf("Lock: %d\tstatus: %d\tpcount: %d\tcurrprio: %d\tcurrpids: 0x%08X\n", lock, lk->status, lk->pcount, lk->currprio, lk->currpids);
-	kprintf("Lock: %d\tstatus: %d\tpcount: %d\tcurrpids: 0x%08X\n", lock, lk->status, lk->pcount, lk->currpids);
+	kprintf("\tLock: %d\tstatus: %d\tpcount: %d\n", lock, lk->status, lk->pcount);
+	int i = 0;
+	kprintf("\t");
+	for(; i < NPROC; i++)
+	{
+		kprintf("currpids[%02d]: %s  ", i, lk->currpids[i] == TRUE ? "TRUE " : "FALSE");
+		if((i + 1) % 5 == 0)
+			kprintf("\n\t");
+	}
 }
