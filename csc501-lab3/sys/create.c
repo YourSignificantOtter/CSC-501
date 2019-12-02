@@ -69,7 +69,7 @@ SYSCALL create(procaddr,ssize,priority,name,nargs,args)
 
 	//PA3 ADDITIONS
 	pptr->pinh = 0;
-	pptr->lockid = -1;
+	pptr->plockid = -1;
 	for(i = 0; i < NLOCK; i++)
 		pptr->plocks[i] = FALSE;
 

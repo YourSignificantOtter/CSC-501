@@ -10,8 +10,9 @@
  * returns OK or SYSERR
  * -------------------------------------------------------
  */
-int prio_inherit(int pid, int priority, int lock)
+int prio_inherit(int pid, int lock)
 {
+
 	if(isbadpid(pid))
 	{
 		#ifdef DBG_PRINT
@@ -35,20 +36,33 @@ int prio_inherit(int pid, int priority, int lock)
 		kprintf("\t\t\tPerforming priority inheritance tasks!\n");
 	#endif
 
-	struct pentry *pptr = &proctab[currpid];
-	lock_t *lk = &locks[lock];
 
-	if(priority > lk->currprio)
+	struct pentry *nptr = &proctab[pid]; //The new process that wants the lock
+	struct pentry *optr = &proctab[locks[lock].owner]; //The process that has the lock
+
+	//Check if the new process has prio > old process
+	if(pinhpprio(nptr) > pinhpprio(optr))
 	{
-		#ifdef DBG_PRINT
-				kprintf("\tCurrent lock owner %d has lower prio than %d trying to access it\n", lk->owner, currpid);
-		#endif
+		kprintf("new pointer greater than old\n");
+		optr->pinh = pinhpprio(nptr); //Update the pinh field of the curr
+		//lock owner to be the new greaer priority value
 
-		proctab[lk->owner].pinh = pinhpprio(pptr); //Set the lock owner prio to this prio
-
-		kprintf("\t\t!!!!!TO IMPLEMENT: TRANSATIVE PROPERTIES!!!!!\n");
-	}
-
+		//Perform transative priority inheritance
+		int l = 0;
+		for(; l < NLOCK; l++)
+		{
+			if(proctab[pid].plocks[l] == TRUE && l != lock)
+			{
+				struct pentry *lptr = &proctab[locks[l].owner];
+				if(pinhpprio(nptr) > pinhpprio(lptr))
+				{
+					kprintf("Prio inherit recursion?\n");
+					lptr->pinh = pinhpprio(nptr);
+					prio_inherit(locks[l].owner, l);
+				}
+			}
+		}
+	}	
 
 	restore(ps);
 	return OK;

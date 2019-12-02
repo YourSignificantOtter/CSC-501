@@ -34,9 +34,9 @@ int releaseall(int numlocks, long args)
 	for(numlocks; numlocks > 0; numlocks--)
 	{
 		currentLock = *a--; //Get the lock ID and move the pointer for the next loop
-		#ifdef DBG_PRINT
+//		#ifdef DBG_PRINT
 			kprintf("\treleaseall narg: %d *a: %d\n", numlocks, currentLock);
-		#endif
+//		#endif
 
 		//Check if its a good lock id
 		if(isbadlock(currentLock))
@@ -48,7 +48,7 @@ int releaseall(int numlocks, long args)
 		lk = &locks[currentLock];
 
 		//Check if the process actually controls the locks its attempting to release
-		if(lk->currpids[currpid] == FALSE)
+		if(lk->owner != currpid)
 		{
 			kprintf("Process %s does not control lock %d that it was attempting to release!\n", pptr->pname, currentLock);
 			return SYSERR;
@@ -58,40 +58,21 @@ int releaseall(int numlocks, long args)
 		if(lk->status == WRITE) //Can only be one writer at a time so we can safely release this
 		{
 			lk->status = FREE; //Lock is not used atm
+			lk->owner = -1;
 			lk->currpids[currpid] = FALSE; //remove this pid from the current users
 			q_dequeue(pinhpprio(pptr), WRITE, currpid, currentLock);
 			pptr->plocks[currentLock] = FALSE;
+			if(proctab[lk->head->pid].pstate == PRWAIT)
+				ready(lk->head->pid, RESCHNO);
 		}
-		else if(lk->status == READ) //Might be multiple readers
+		else if(lk->status == READ)
 		{
+			//TODO how to handle multiple readers
 			lk->status = FREE; //Lock is not used atm
+			lk->owner = -1;
 			lk->currpids[currpid] = FALSE; //remove this pid from the current users
 			q_dequeue(pinhpprio(pptr), WRITE, currpid, currentLock);
 			pptr->plocks[currentLock] = FALSE;
-
-/*
-			int i = 0;
-			Bool multipleReaders = FALSE;
-			for(; i < NLOCK; i++)
-			{
-				if(locks[currentLock].currpids[i] == TRUE && i != currpid)
-				{
-					multipleReaders = TRUE;//Multiple readers
-					break;
-				}
-			}
-
-			if(multipleReaders == TRUE)
-			{
-				//release just this pid from the lock
-				lk->currpids[currpid] = FALSE;
-				
-			}
-			else
-			{
-
-			}
-*/
 		}
 		
 	}	

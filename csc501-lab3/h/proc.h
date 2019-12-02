@@ -69,7 +69,7 @@ struct	pentry	{
 	// PA3 ADDITONS BELOW THIS 
 	int	pinh;			/* inherited priority		*/
 	Bool	plocks[NLOCK];		/* locks this process has	*/
-	int	lockid;			/* which lock are we waiting on	*/
+	int	plockid;		/* which lock are we waiting on	*/
 
 };
 

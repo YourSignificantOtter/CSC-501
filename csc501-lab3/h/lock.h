@@ -1,8 +1,8 @@
 #ifndef _LOCK_H_
 #define _LOCK_H_
 
-#define DBG_PRINT					/* Control if the system should Print out
-							 debug statements			*/
+//#define DBG_PRINT					/* Control if the system should Print out */
+							/* debug statements			*/
 
 #define NLOCK 50					/* Number of R/W Locks			*/
 
@@ -12,7 +12,7 @@
 #define READ	2					/* Lock is for reading purposes		*/
 #define WRITE	3					/* Lock is for writing purposes		*/
 
-int prio_inherit(int pid, int priority, int lock);	/* Perform priority inheritance with proc
+int prio_inherit(int pid, int lock);			/* Perform priority inheritance with proc
 							pid attempting to gain lock		*/
 
 int linit(void);					/* Initialize all the system R/W Locks	*/

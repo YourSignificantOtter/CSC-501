@@ -64,12 +64,22 @@ int lock(int des1, int type, int priority)
 	if(lk->status == READ && type == READ)
 	{
 		q_enqueue(priority, type, currpid, des1);
-		prio_inherit(currpid, priority, des1);
+		prio_inherit(currpid, des1);
 
 		//Check if the prio >= the highest WRITE in the queue
 		q_node_t *iter = lk->head;
 		while(iter != lk->tail)
 		{
+			if(priority > iter->prio) //stop looking if we are higher prio
+			{
+				#ifdef DBG_PRINT
+					kprintf("\tNew reader added to lock\n");
+				#endif
+				lk->currpids[currpid] = TRUE;
+				proctab[currpid].plocks[des1] = TRUE;
+				break;
+			}
+
 			if(iter->type == WRITE)
 			{
 				if(priority >= iter->prio)
@@ -78,8 +88,8 @@ int lock(int des1, int type, int priority)
 						kprintf("\tNew reader added to lock\n");
 					#endif
 					lk->currpids[currpid] = TRUE;
-					restore(ps);
-					return OK;
+					proctab[currpid].plocks[des1] = TRUE;
+					break;
 				}
 				else
 				{
@@ -102,13 +112,15 @@ int lock(int des1, int type, int priority)
 			kprintf("\tWrite locks are exclusive so we enqueue this request regardless of priorities.\n");
 		#endif
 
-		prio_inherit(currpid, priority, des1);
+		prio_inherit(currpid, des1);
 
 //		lk->pcount++;
 		q_enqueue(priority, type, currpid, des1);
-
+		proctab[currpid].plocks[des1] = TRUE;
+		proctab[currpid].plockid = des1;
 		proctab[currpid].pstate = PRWAIT; //Block the current process
 		proctab[currpid].pwaitret = OK; 
+		kprintf("Enqueing a writer!\n");
 		resched();
 	}
 

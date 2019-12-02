@@ -18,6 +18,7 @@ int linit(void)
 	{
 		locks[i].status = INIT;	//locks are initialized
 		locks[i].pcount = 0;	//No processes are waiting for the lock
+		locks[i].owner = -1;
 //		locks[i].currprio = 0;
 
 		int j = 0;
