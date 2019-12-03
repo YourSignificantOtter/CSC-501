@@ -27,6 +27,10 @@ extern	int	mon_init();
 extern	int	ripinit();
 LOCAL   int	sysinit();
 
+// PA3A ADDITION - LOCK TABLE DECLERATION
+#include <lock.h>
+lock_t locktab[NLOCKS];		/* lock table				*/
+
 /* Declarations of major kernel variables */
 struct	pentry	proctab[NPROC]; /* process table			*/
 int	nextproc;		/* next process slot to use in create	*/
@@ -197,6 +201,9 @@ LOCAL int sysinit()
 	    init_dev(i);
 	}
 #endif
+
+	//PA3A ADDITION - CALL TO LINIT
+	linit();
 
 	return(OK);
 }

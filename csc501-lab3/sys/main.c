@@ -98,6 +98,14 @@ void test2 ()
 	rd3 = create(reader2, 2000, 20, "reader2", 3, 'D', lck, 25);
 	rd4 = create(reader2, 2000, 20, "reader2", 3, 'E', lck, 20);
         wr1 = create(writer2, 2000, 20, "writer2", 3, 'C', lck, 25);
+
+	#ifdef DBG_PRINT
+		kprintf("DBG_PRINT: rd1 pprio: 20 lkPrio: 20\n");
+		kprintf("DBG_PRINT: rd2 pprio: 20 lkPrio: 30\n");
+		kprintf("DBG_PRINT: rd3 pprio: 20 lkPrio: 25\n");
+		kprintf("DBG_PRINT: rd4 pprio: 20 lkPrio: 20\n");
+		kprintf("DBG_PRINT: wr1 pprio: 20 lkPrio: 25\n");
+	#endif
 	
         kprintf("-start reader A, then sleep 1s. lock granted to reader A\n");
         resume(rd1);
@@ -191,9 +199,9 @@ int main( )
          * The provided results do not guarantee your correctness.
          * You need to read the PA2 instruction carefully.
          */
-	test1();
+//	test1();
 	test2();
-	test3();
+//	test3();
 
         /* The hook to shutdown QEMU for process-like execution of XINU.
          * This API call exists the QEMU process.

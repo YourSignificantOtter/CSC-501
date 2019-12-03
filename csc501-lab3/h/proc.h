@@ -16,6 +16,10 @@
 #define	FDFREE		-1		/* free file descriptor */
 #define PRFREE		'\002'          /* process slot is free         */
 
+//PA3 ADDITION - Need access to NLOCKS define
+#ifndef _LOCK_H_
+#include <lock.h>
+#endif
 
 /* process state constants */
 
@@ -60,6 +64,11 @@ struct	pentry	{
 	int	fildes[_NFILE];		/* file - device translation	*/
 	int	ppagedev;		/* pageing dgram device		*/
 	int	pwaitret;
+
+	//PA3A ADDITIONS
+	int	pinh;			/* Inherited priority				*/
+	Bool	plocks[NLOCKS];		/* What locks are held by this process		*/
+	int	plockid;		/* Lock id that this process is blocked by	*/
 };
 
 
