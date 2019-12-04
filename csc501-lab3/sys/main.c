@@ -100,11 +100,11 @@ void test2 ()
         wr1 = create(writer2, 2000, 20, "writer2", 3, 'C', lck, 25);
 
 	#ifdef DBG_PRINT
-		kprintf("DBG_PRINT: rd1 pprio: 20 lkPrio: 20\n");
-		kprintf("DBG_PRINT: rd2 pprio: 20 lkPrio: 30\n");
-		kprintf("DBG_PRINT: rd3 pprio: 20 lkPrio: 25\n");
-		kprintf("DBG_PRINT: rd4 pprio: 20 lkPrio: 20\n");
-		kprintf("DBG_PRINT: wr1 pprio: 20 lkPrio: 25\n");
+		kprintf("DBG_PRINT: rd1(%d %s) pprio: 20 lkPrio: 20\n", rd1, "A");
+		kprintf("DBG_PRINT: rd2(%d %s) pprio: 20 lkPrio: 30\n", rd2, "B");
+		kprintf("DBG_PRINT: rd3(%d %s) pprio: 20 lkPrio: 25\n", rd3, "D");
+		kprintf("DBG_PRINT: rd4(%d %s) pprio: 20 lkPrio: 20\n", rd4, "E");
+		kprintf("DBG_PRINT: wr1(%d %s) pprio: 20 lkPrio: 25\n", wr1, "C");
 	#endif
 	
         kprintf("-start reader A, then sleep 1s. lock granted to reader A\n");
@@ -172,22 +172,26 @@ void test3 ()
         kprintf("-start reader A, then sleep 1s. reader A(prio 25) blocked on the lock\n");
         resume(rd1);
         sleep (1);
-	assert (getprio(wr1) == 25, "Test 3 failed");
+	kprintf("getprio(wr1): %d\n", getprio(wr1));
+	assert (getprio(wr1) == 25, "Test 3 failed\t1");
 
         kprintf("-start reader B, then sleep 1s. reader B(prio 30) blocked on the lock\n");
         resume (rd2);
 	sleep (1);
-	assert (getprio(wr1) == 30, "Test 3 failed");
+	kprintf("getprio(wr1): %d\n", getprio(wr1));
+	assert (getprio(wr1) == 30, "Test 3 failed\t2");
 	
 	kprintf("-kill reader B, then sleep 1s\n");
 	kill (rd2);
 	sleep (1);
-	assert (getprio(wr1) == 25, "Test 3 failed");
+	kprintf("getprio(wr1): %d\n", getprio(wr1));
+	assert (getprio(wr1) == 25, "Test 3 failed\t3");
 
 	kprintf("-kill reader A, then sleep 1s\n");
 	kill (rd1);
 	sleep(1);
-	assert(getprio(wr1) == 20, "Test 3 failed");
+	kprintf("getprio(wr1): %d\n", getprio(wr1));
+	assert(getprio(wr1) == 20, "Test 3 failed\t4");
 
         sleep (8);
         kprintf ("Test 3 OK\n");
@@ -199,9 +203,9 @@ int main( )
          * The provided results do not guarantee your correctness.
          * You need to read the PA2 instruction carefully.
          */
-//	test1();
-	test2();
-//	test3();
+	test1();
+//	test2();
+	test3();
 
         /* The hook to shutdown QEMU for process-like execution of XINU.
          * This API call exists the QEMU process.

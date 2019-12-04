@@ -6,32 +6,29 @@
 
 /*
   ============================================================
-	priorityInheritance - performs inheritance on the passed processes
-		accessor - the PID that wants to gain the lock
-		owner - the PID that currently owns the lock
+	priorityInheritance - performs inheritance on the passed lock
+		lkId - ID of the lock to perform inheritance on
 		returns OK or SYSERR
   ============================================================
 */
-//int priorityInheritance(int accessor, int owner)
 int priorityInheritance(int lkId)
 {
 	#ifdef DBG_PRINT
 		kprintf("Performing priority inheritance...\t");
 	#endif
-/*
-	if(isbadpid(accessor) || isbadpid(owner))
-	{
-		#ifdef DBG_PRINT
-			kprintf("Failed! One of the passed pids %d %d is out of bounds 0 - %d!\n", accessor, owner, NPROC);
-		#endif
-		return SYSERR;
-	}
-*/
 
 	if(isbadlock(lkId))
 	{
 		#ifdef DBG_PRINT
 			kprintf("Failed! The passed lock id %d is out of bounds 0 - %d!\n", lkId, NLOCKS);
+		#endif
+		return SYSERR;
+	}
+
+	if(isbadpid(locktab[lkId].owner))
+	{
+		#ifdef DBG_PRINT
+			kprintf("Failed! The passed lock owner is not a valid pid!\n");
 		#endif
 		return SYSERR;
 	}
@@ -48,15 +45,25 @@ int priorityInheritance(int lkId)
 	//Find the max prio in the lock queue
 	for(; i < NPROC; i++)
 	{
+		if(i == lk->owner)
+			continue;
+
 		if(lk->pid[i] == TRUE)
 		{
 			if(ppriopinh(i) > maxPrio)
+			{
 				maxPrio = ppriopinh(i);
+			}
 		}
 	}
-	
+
+	//If there is no priority to inherit set the inherited priority of the lock owner to 0
+	if(maxPrio == MININT)
+	{
+		proctab[lk->owner].pinh = 0;
+	}
 	//Set the lock owners inherited priority to the new priority
-	if(ppriopinh(lk->owner) < maxPrio)
+	if(proctab[lk->owner].pprio < maxPrio)
 	{
 		proctab[lk->owner].pinh = maxPrio;
 		//Perform transative priority inheritance
@@ -64,8 +71,15 @@ int priorityInheritance(int lkId)
 		int j = 0;
 		for(; j < NLOCKS; j++)
 		{
+			if(j == lkId)
+				continue;
+
+			if(locktab[j].pid[lk->owner] == TRUE)
+				priorityInheritance(j);
+			/*
 			if(proctab[lk->owner].plocks[j] == TRUE)
 				priorityInheritance(j);
+			*/
 		}		
 	}
 
@@ -76,26 +90,3 @@ int priorityInheritance(int lkId)
 	restore(ps);
 	return OK;
 }
-
-/*
-	//Set the owner's priority to the acessor's priority
-	proctab[owner].pinh = ppriopinh(accessor);
-
-	//Handle transitive properties
-	int i = 0;
-	for(; i < NLOCKS; i++)
-	{
-		if(proctab[owner].plocks[i] == TRUE)
-		{
-			
-		}
-	}
-
-	//Re-enable interrupts
-	#ifdef DBG_PRINT
-		kprintf("done!\n");
-	#endif
-	restore(ps);
-	return OK;
-}
-*/

@@ -4,7 +4,7 @@
 
 #include <lock.h>
 
-int blockProcess(int lkId, int lkPrio); //Block the process to wait on the lock
+int blockProcess(int lkId, int lkPrio, int accessType); //Block the process to wait on the lock
 
 /*
   ============================================================
@@ -39,6 +39,10 @@ int lock(int lkId, int accessType, int lkPrio)
 	//Get the lock from the lock table
 	lock_t *lk = &locktab[lkId];
 
+	//Update maxPrioPid if applicable
+	if(lkPrio > lk->prio[lk->maxPrioPid])
+		lk->maxPrioPid 	= currpid;
+
 	//Check if the lock is free
 	if(lk->status == FREE)
 	{
@@ -49,10 +53,10 @@ int lock(int lkId, int accessType, int lkPrio)
 		//Set up the lock values
 		lk->status		= accessType;
 		lk->owner 		= currpid;
-		lk->maxPrioPid 		= currpid;
 		lk->pid[currpid] 	= TRUE;
 		lk->prio[currpid] 	= lkPrio;
 		lk->accType[currpid] 	= accessType;		
+		lk->timeStamp[currpid]	= ctr1000;
 
 		//Set up the proctab values
 		proctab[currpid].plocks[lkId] = TRUE;		
@@ -74,10 +78,6 @@ int lock(int lkId, int accessType, int lkPrio)
 
 			if(lk->pid[i] == TRUE)
 			{
-				#ifdef DBG_PRINT
-					kprintf("DBG_PRINT: pid i = %d, %s, %d, %d\n", i, lk->accType[i] == WRITE ? "WRITE" : "READ ", lk->prio[i], maxWritePrio);
-				#endif
-
 				if(lk->accType[i] == WRITE && lk->prio[i] > maxWritePrio)
 					maxWritePrio = lk->prio[i];
 			}
@@ -93,6 +93,8 @@ int lock(int lkId, int accessType, int lkPrio)
 			//Add the process into the lock queue so we know that its there, but dont block the process
 			lk->pid[currpid] = TRUE;
 			lk->prio[currpid] = lkPrio;
+			lk->timeStamp[currpid]	= ctr1000;
+			lk->accType[currpid] = READ;
 			//No need to perform priority inheritance here because this process is NOT blocked
 		}
 		else
@@ -100,7 +102,7 @@ int lock(int lkId, int accessType, int lkPrio)
 			#ifdef DBG_PRINT
 				kprintf("DBG_PRINT: Cannot simultaneously read, there is a WRITE process with higher priority in the queue!\n");
 			#endif
-			blockProcess(lkId, lkPrio);
+			blockProcess(lkId, lkPrio, accessType);
 			//Block by rescheduling
 			resched();
 			//Upon return the process will have access to the lock!
@@ -109,7 +111,7 @@ int lock(int lkId, int accessType, int lkPrio)
 	//If not we add the process into the "queue"
 	else
 	{
-		blockProcess(lkId, lkPrio);
+		blockProcess(lkId, lkPrio, accessType);
 		//Block by rescheduling
 		resched();
 		//Upon return the process will have access to the lock!
@@ -124,10 +126,11 @@ int lock(int lkId, int accessType, int lkPrio)
 	blockProcess - blocks a process that is trying to gain a lock
 		lkId - the lock id that the process is trying to gain
 		lkPrio - the priority that the process wants to place into the lock queue
+		accessType - the type of access the user wants
 	returns OK or SYSERR
   ============================================================
 */
-int blockProcess(int lkId, int lkPrio)
+int blockProcess(int lkId, int lkPrio, int accessType)
 {
 	#ifdef DBG_PRINT
 		kprintf("DBG_PRINT: Add process %d(%s) to lock queue and block!\n", currpid, proctab[currpid].pname);
@@ -136,16 +139,16 @@ int blockProcess(int lkId, int lkPrio)
 	lock_t *lk = &locktab[lkId];
 
 	//Enter the new process and its priority to the lock queue
-	lk->pid[currpid] = TRUE;
-	lk->prio[currpid] = lkPrio;
-	lk->accType[currpid] = WRITE;
+	lk->pid[currpid] 	= TRUE;
+	lk->prio[currpid] 	= lkPrio;
+	lk->accType[currpid] 	= accessType;
+	lk->timeStamp[currpid]	= ctr1000;
 
 	//Block the current process
-	proctab[currpid].plockid = lkId;
-	proctab[currpid].pstate = PRWAIT; //Process is in waiting state
-	proctab[currpid].pwaitret = TRUE;
+	proctab[currpid].plockid	= lkId;
+	proctab[currpid].pstate		= PRWAIT; //Process is in waiting state
+	proctab[currpid].pwaitret	= TRUE;
 
 	//Perform priority inheritance
-//	return(priorityInheritance(currpid, lk->owner));
 	return(priorityInheritance(lkId));
 }

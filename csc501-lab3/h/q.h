@@ -43,4 +43,7 @@ int insert(int proc, int head, int key);
 int getfirst(int head);
 int getlast(int tail);
 
+//PA3 ADDITION - need to remove ready processes from the queue if a writer gains control of a lock while reader is ready
+int remove(int proc, int head);
+
 #endif

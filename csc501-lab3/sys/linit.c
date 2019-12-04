@@ -24,8 +24,10 @@ void linit(void)
 		//Loop over the pids
 		for(; j < NPROC; j++)
 		{
-			locktab[i].pid[j] = FALSE;
-			locktab[i].prio[j] = 0;
+			locktab[i].pid[j]	= FALSE;
+			locktab[i].prio[j]	= 0;
+			locktab[i].accType[j]	= FREE;
+			locktab[i].timeStamp[j]	= 0;
 		}
 	}
 

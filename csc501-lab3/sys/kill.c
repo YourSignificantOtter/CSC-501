@@ -9,6 +9,9 @@
 #include <q.h>
 #include <stdio.h>
 
+//PA3 ADDITION - Need to update priority inheritance when a process is killed
+#include <lock.h>
+
 /*------------------------------------------------------------------------
  * kill  --  kill a process and remove it from the system
  *------------------------------------------------------------------------
@@ -37,6 +40,23 @@ SYSCALL kill(int pid)
 	if (! isbaddev(dev) )
 		close(dev);
 	
+	pptr->pinh = 0;
+	int i = 0;
+	for(; i < NLOCKS; i++)
+	{
+		if(locktab[i].pid[pid] == TRUE)
+		{
+			//Remove this process from the lock queue
+			locktab[i].pid[pid] 		= FALSE;
+			locktab[i].prio[pid] 		= 0;
+			locktab[i].accType[pid]		= FREE;
+			locktab[i].timeStamp[pid]	= 0;
+
+			priorityInheritance(i);
+		}
+	}
+
+
 	send(pptr->pnxtkin, pid);
 
 	freestk(pptr->pbase, pptr->pstklen);

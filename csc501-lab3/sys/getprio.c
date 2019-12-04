@@ -5,6 +5,9 @@
 #include <proc.h>
 #include <stdio.h>
 
+//PA3 ADDITION - need access to ppriopinh macro
+#include <lock.h>
+
 /*------------------------------------------------------------------------
  * getprio -- return the scheduling priority of a given process
  *------------------------------------------------------------------------
@@ -20,5 +23,5 @@ SYSCALL getprio(int pid)
 		return(SYSERR);
 	}
 	restore(ps);
-	return(pptr->pprio);
+	return(ppriopinh(pid));
 }
