@@ -59,4 +59,16 @@ task2_sync_issue.c. Multiple reader threads can execute this code concurrently b
 All the variables starting with global_ are global variables. You are asked to describe the potential issue caused 
 by the incorrect synchronization and point out at least one possible thread interleaving that would trigger the 
 problem. Put your answer in Lab3Answers.txt mentioned above.
-	
+	In the given psuedo code we can see that the author attempts to create a global buffer object that has 
+	controlled access through a global counting semaphore. In the code the semaphore can only be updated
+	by a process that gains access to a lock, and then also gains acccess to the semaphore. Once the process
+	gains access to both it then copies its given time into the buffer if the time is less than the global_now
+	time. There are a few points in the code that can cause synchronization issues. The first being the global
+	time variable. If this variable is updated immediatly after the comparison occurs in a process then
+	the process will still be able to update the buffer even though the new time does not meet the requirements.
+	A second area that may cause synchronization issues is the use of a counting semaphore. Buffer_add depends
+	on the buffer_t size value to determine if a process should be allowed to write. It also depends on the len
+	value to determine where a write should begin. If process A gets the semaphore and begins its memcopy but
+	is interrupted before it updates the buf->len value, then process B may enter and overwite all of process A
+	entry. Additionally when process A resumes control it can potentially update the length value incorrectly
+	and will add a null terminator in the wrong location.
