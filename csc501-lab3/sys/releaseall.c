@@ -72,7 +72,6 @@ int releaseall(int numlk, long args)
 				#ifdef DBG_PRINT
 					kprintf("Failed! lock %d is not owned by process %d(%s)!\n", currentLockId, currpid, proctab[currpid].pname);
 				#endif
-				kprintf("owner: %d %s\n", lk->owner, proctab[lk->owner].pname);
 				badLock = TRUE;
 			}
 		}
@@ -254,7 +253,5 @@ int readyBlockedProcess(int lkId)
 	//Set the new PID to be the lock owner
 	lk->status = lk->accType[maxPrioPid];
 	lk->owner = maxPrioPid;
-	lk->maxPrioPid = maxPrioPid;
-
 	return OK;
 }

@@ -29,7 +29,6 @@
 typedef struct {
 	int  		status; 		// Current lock status, as defined above
 	int  		owner;			// The PID that owns the lock
-	int  		maxPrioPid;		// The PID with the maximum lock prioirity in the queue
 	Bool 		pid[NPROC];		// Processes waiting on the lock
 	int  		prio[NPROC];		// Lock priority of the processes waiting on the lock
 	int  		accType[NPROC];		// Type of access that the user is waiting on

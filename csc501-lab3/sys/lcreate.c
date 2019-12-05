@@ -23,7 +23,7 @@ int lcreate(void)
 		if(locktab[i].status == FREE)
 		{
 			#ifdef DBG_PRINT
-				kprintf("Done! Lock %d created!\n");
+				kprintf("Done! Lock %d created!\n", i);
 			#endif
 			return i;
 		}

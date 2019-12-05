@@ -4,6 +4,7 @@
 #include <lock.h>
 #include <stdio.h>
 #include <lock.h>
+#include <q.h>
 
 #define DEFAULT_LOCK_PRIO 20
 
@@ -197,15 +198,77 @@ void test3 ()
         kprintf ("Test 3 OK\n");
 }
 
+/*----------------------------------Test 4---------------------------*/
+void reader4 (char *msg, int lck)
+{
+        int     ret;
+
+        kprintf ("  %s: to acquire lock\n", msg);
+        lock (lck, READ, DEFAULT_LOCK_PRIO);
+        kprintf ("  %s: acquired lock\n", msg);
+	kprintf ("  %s: sleep for 3s\n", msg);
+	sleep(3);
+	kprintf ("  %s: delete lock%d\n", msg, lck);
+	ldelete(lck);
+	kprintf ("  %s: create new lock with same id\n", msg);
+	lck = lcreate();
+	kprintf (" %s: new lock id %d\n", msg, lck);
+	kprintf (" %s: release the lock\n", msg);
+        releaseall (1, lck);
+}
+
+void writer4 (char *msg, int lck)
+{
+        kprintf ("  %s: to acquire lock\n", msg);
+        int ret = lock (lck, WRITE, DEFAULT_LOCK_PRIO);
+	
+	kprintf("DELETED: %d ret: %d\n", DELETED, ret);
+}
+
+void test4 ()
+{
+        int     lck;
+        int     rd1;
+        int     wr1;
+
+        kprintf("\nTest 4: test lock deletion\n");
+        lck  = lcreate ();
+        assert (lck != SYSERR, "Test 3 failed");
+
+        rd1 = create(reader4, 2000, 25, "reader4", 2, "reader A", lck);
+        wr1 = create(writer4, 2000, 20, "writer4", 2, "writer B", lck);
+
+	kprintf("reader A will acquire lock, sleep for 3s\n");
+	kprintf("writer A will attempt to acquire lock but be blocked\n");
+	kprintf("reader A will delete the lock and then create a new one with the same ID\n");
+	kprintf("reader A will release and writer A needs to realize it was deleted!\n");
+
+	resume (rd1);
+	sleep(1);
+
+	resume(wr1);
+
+	sleep(8);
+	kprintf("test 4 done!\n");	
+
+}
+
+
 int main( )
 {
         /* These test cases are only used for test purpose.
          * The provided results do not guarantee your correctness.
          * You need to read the PA2 instruction carefully.
          */
+
+	kprintf("\n\t\tMAIN\n");
+
 //	test1();
-	test2();
+//	test2();
 //	test3();
+//	test4();
+
+	task1();
 
         /* The hook to shutdown QEMU for process-like execution of XINU.
          * This API call exists the QEMU process.

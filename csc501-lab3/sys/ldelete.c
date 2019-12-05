@@ -24,6 +24,41 @@ int ldelete(int lkId)
 		#endif
 	}
 
+	//Clear the lock information
+	lock_t *lk = &locktab[lkId];
+	lk->status = FREE;
+	lk->owner = -1;
+	int i = 0;
+	for(; i < NPROC; i++)
+	{
+		lk->pid[i]		= FALSE;
+		lk->prio[i]		= 0;
+		lk->accType[i]		= FREE;
+		lk->timeStamp[i]	= 0;
+	}
+
+	i = 0;
+	for(; i < NPROC; i++)
+	{
+		//Check if any processes were waiting on this lock
+		if(proctab[i].plockid == lkId)
+		{
+			#ifdef DBG_PRINT
+				kprintf("DBG_PRINT: Process %d (%s) (%d) was waiting on deleted lock %d\n", i, proctab[i].pname, proctab[i].plockid, lkId);
+			#endif
+
+			proctab[i].plockid = DELETED; //Inform the process that the lock was deleted
+			ready(i, rdyhead);
+		}
+		
+		if(proctab[i].plocks[lkId] == TRUE)
+		{
+			#ifdef DBG_PRINT
+				kprintf("DBG_PRINT: Process %d (%s) owned the deleted lock %d\n", i, proctab[i].pname, lkId);
+			#endif
+			proctab[i].plocks[lkId] = FALSE;
+		}
+	}
 
 	#ifdef DBG_PRINT
 		kprintf("Done!\n");

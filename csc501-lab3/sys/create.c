@@ -9,6 +9,9 @@
 #include <io.h>
 #include <stdio.h>
 
+//PA3 Addition - Need NLOCKS so we can setup lock info
+#include <lock.h>
+
 LOCAL int newpid();
 
 /*------------------------------------------------------------------------
@@ -66,6 +69,15 @@ SYSCALL create(procaddr,ssize,priority,name,nargs,args)
 	pptr->pirmask[0] = 0;
 	pptr->pnxtkin = BADPID;
 	pptr->pdevs[0] = pptr->pdevs[1] = pptr->ppagedev = BADDEV;
+
+	//PA3 ADDITION NEED TO SETUP SOME OF THE LOCK INFO
+	pptr->pinh = 0;
+	pptr->plockid = -1;
+	int lockId = 0;
+	for(; lockId < NLOCKS; lockId++)
+	{
+		pptr->plocks[lockId] = FALSE;
+	}
 
 		/* Bottom of stack */
 	*saddr = MAGIC;

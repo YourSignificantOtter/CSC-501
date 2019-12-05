@@ -26,12 +26,7 @@ int priorityInheritance(int lkId)
 	}
 
 	if(isbadpid(locktab[lkId].owner))
-	{
-		#ifdef DBG_PRINT
-			kprintf("Failed! The passed lock owner is not a valid pid!\n");
-		#endif
 		return SYSERR;
-	}
 
 	//Disable Interrupts
 	STATWORD ps;

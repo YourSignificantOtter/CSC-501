@@ -19,6 +19,7 @@ SYSCALL	wait(int sem)
 
 	disable(ps);
 	if (isbadsem(sem) || (sptr= &semaph[sem])->sstate==SFREE) {
+		kprintf("Bad semaphore!\n");
 		restore(ps);
 		return(SYSERR);
 	}

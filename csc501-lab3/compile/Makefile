@@ -51,7 +51,8 @@ SYS =	blkcmp.c	blkequ.c	main.c		stacktrace.c	\
 	unsleep.c	userret.c	wait.c		wakeup.c	\
 	write.c		xdone.c		pci.c		shutdown.c	\
 	linit.c		lcreate.c	ldelete.c	lock.c		\
-	releaseall.c	priorityinheritance.c		remove.c	
+	releaseall.c	priorityinheritance.c		remove.c	\
+	task1.c
 
 TTY =	ttyalloc.c	ttycntl.c	ttygetc.c	ttyiin.c	\
 	ttyinit.c	ttynew.c	ttyopen.c	ttyputc.c	\

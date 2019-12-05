@@ -204,7 +204,9 @@ LOCAL int sysinit()
 
 	//PA3A ADDITION - CALL TO LINIT
 	linit();
-
+	//Also need to initialize all proccess tab entries to have no lockid they are waiting on
+	for(i = 0; i < NPROC; i++)
+		proctab[i].plockid = -1;
 	return(OK);
 }
 

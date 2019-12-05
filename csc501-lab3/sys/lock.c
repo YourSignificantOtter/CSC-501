@@ -41,10 +41,6 @@ int lock(int lkId, int accessType, int lkPrio)
 	//Get the lock from the lock table
 	lock_t *lk = &locktab[lkId];
 
-	//Update maxPrioPid if applicable
-	if(lkPrio > lk->prio[lk->maxPrioPid])
-		lk->maxPrioPid 	= currpid;
-
 	//Check if the lock is free
 	if(lk->status == FREE)
 	{
@@ -107,7 +103,7 @@ int lock(int lkId, int accessType, int lkPrio)
 			blockProcess(lkId, lkPrio, accessType);
 			//Block by rescheduling
 			resched();
-			//Upon return the process will have access to the lock!
+			//Upon return the process will have access to the lock!			
 		}
 	}
 	//If not we add the process into the "queue"
@@ -117,6 +113,16 @@ int lock(int lkId, int accessType, int lkPrio)
 		//Block by rescheduling
 		resched();
 		//Upon return the process will have access to the lock!
+	}
+
+	//Check if the lock was delted while we were waiting
+	if(proctab[currpid].plockid == DELETED)
+	{
+		#ifdef DBG_PRINT
+			kprintf("DBG_PRINT: Lock was deleted while process was blocked in its waiting queue!\n");
+		#endif
+		restore(ps);
+		return DELETED;
 	}
 
 	restore(ps);

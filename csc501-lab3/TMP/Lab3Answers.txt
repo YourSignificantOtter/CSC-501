@@ -1,0 +1,62 @@
+Nicholas Herrmann 
+
+1. The priority inversion problem could cause that a higher-priority process needs to wait for the completion 
+	of a lower-priority process.
+	1.a) Priority inheritance is one approach to address this issue. Please give another approach 
+	and briefly describe its idea.
+		Another approach to solving priority inversion is the priority ceiling protocol. In this protocol
+		a process may take a free resource and begin running at its current priority. If another process
+		tries to gain access to that same resource the first process will be signaled, and have its 
+		priority increased to a maximum (or ceiling) priority for that resource. This allows the OS to
+		control different priority levels respective to each resource, and reduces the number of 
+		priority movements required as the priority is only changed when a process attempts to control
+		a non-open resource, and there is no transative affect.
+
+	1.b) Design a test case to show that your approach can address the priority inversion problem. You should 
+	compare the results that derived from the original XINU implementation (use semaphore) and that derived 
+	from your implementation (use readers/writer locks). Put your results in Lab3Answers.txt and your test case 
+	program (name it task1.c) in both ./sys and ./TMP
+		task1.c is included in both sys and TMP. The example shows that the XINU semaphore implementation
+		does not properly run, where as the submitted read/write lock created in this project performs
+		as expected. With the R/W lock implementation we can see that the program outputs Low High Medium
+		which is what we would expect. When we use the semaphores however we see High Low Medium. Which
+		shows that the semaphores allowed a higher priority process to superscede a lower priority one in
+		a critical section. This does still block the medium prority process from keeping the high or low process
+		from running however.
+
+		The output is as follows
+Task 1 running!
+General Idea is to have 3 processes
+Proc 1 is low prio, proc 2 is med, proc 3 is high
+Proc 1 will acquire the lock/sem and proc 3 will block on it
+Proc 2 will then come in and try to block Proc 1, thus also blocking Proc 3
+Starting with read/write lock approach
+Low Prio process started!
+Acquiring lck...Low Prio process acquired lck, sleeping for 1 sec
+High Prio process started!
+Acquiring lck...Med Prio process started!
+Low Prio process releasing lck
+High Prio process acquired lck
+High Prio process releasing lck
+R/W Locks testOutput: LHM
+Now testing semaphores!
+
+
+Low Prio process started!
+Acquiring sem...Low Prio process acquired sem, sleeping for 1 sec
+High Prio process started!
+Acquiring sem...High Prio process acquired sem
+High Prio process releasing sem
+Med Prio process started!
+Low Prio process releasing sem
+semaphore testOutput: HLM
+Task1 Done!
+
+
+2.Synchronization is a quite complex issue in operating systems. To show your understanding about process 
+synchronization, you are asked to point out a reader/writer synchronization issue in this pesudo-code: 
+task2_sync_issue.c. Multiple reader threads can execute this code concurrently by calling do_update. 
+All the variables starting with global_ are global variables. You are asked to describe the potential issue caused 
+by the incorrect synchronization and point out at least one possible thread interleaving that would trigger the 
+problem. Put your answer in Lab3Answers.txt mentioned above.
+	
