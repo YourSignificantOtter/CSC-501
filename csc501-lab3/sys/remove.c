@@ -1,7 +1,7 @@
 //PA3 addition this file added so we can remove reading processes from the ready queue when a writer takes the lock
 
 #include <conf.h>
-#include <kernel.n>
+#include <kernel.h>
 #include <q.h>
 
 /*
@@ -23,5 +23,17 @@ int remove(int proc, int head)
 	q[proc].qkey = 0;
 	q[prev].qnext = next;
 
-	return OK
+	return OK;
+}
+
+int printq(int head)
+{
+	int iter;
+
+	iter = q[head].qnext;
+	while(q[iter].qkey != MAXINT)
+	{
+		kprintf("iter: %d\tkey: %d\n", iter, q[iter].qkey);
+		iter = q[iter].qnext;
+	}
 }

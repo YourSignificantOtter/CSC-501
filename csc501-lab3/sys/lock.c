@@ -3,8 +3,10 @@
 #include <stdio.h>
 
 #include <lock.h>
+#include <q.h>
 
 int blockProcess(int lkId, int lkPrio, int accessType); //Block the process to wait on the lock
+void printLock(int lkId); // Print lock information
 
 /*
   ============================================================
@@ -151,4 +153,28 @@ int blockProcess(int lkId, int lkPrio, int accessType)
 
 	//Perform priority inheritance
 	return(priorityInheritance(lkId));
+}
+
+/*
+  ============================================================
+	printLock - Prints a lock for debugging purposes
+		lkId - the lock ID to print
+  ============================================================
+*/
+void printLock(int lkId)
+{
+	kprintf("Printing Lock: %d information\n", lkId);
+	lock_t *lk = &locktab[lkId];
+	kprintf("Status: %d, Owner: %d\n",lk->status, lk->owner);
+	kprintf("pid\t\tlk->pid\t\tlk->prio\tlk->accType\tlk->timeStamp\n");
+	int i = 0;
+	for(; i < NPROC; i++)
+	{
+		if(lk->pid[i] == TRUE)
+		{
+			kprintf("%d\t\t%d\t\t%d\t\t%d\t\t%08X\n", i, lk->pid[i], lk->prio[i], lk->accType[i], lk->timeStamp[i]);
+		}
+	}
+
+	kprintf("\n\n");
 }

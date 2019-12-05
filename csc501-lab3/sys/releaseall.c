@@ -47,6 +47,8 @@ int releaseall(int numlk, long args)
 	for(; i < numlk; i++)
 	{
 		currentLockId = a[i];
+		//printLock(currentLockId);
+
 		#ifdef DBG_PRINT
 			kprintf("narg: %d id: %d ", numlk, currentLockId);
 		#endif
@@ -54,10 +56,25 @@ int releaseall(int numlk, long args)
 		lock_t *lk = &locktab[currentLockId];
 		if(lk->owner != currpid)
 		{
-			#ifdef DBG_PRINT
-				kprintf("Failed! lock %d is not owned by process %d(%s)!\n", currentLockId, currpid, proctab[currpid].pname);
-			#endif
-			badLock = TRUE;
+			if(lk->status == READ && lk->accType[currpid] == READ)
+			{
+				//release the lock from a simultaneous reader, just remove it from the lock queue
+				lk->pid[currpid] 	= FALSE;
+				lk->prio[currpid] 	= 0;
+				lk->accType[currpid]	= FREE;
+				lk->timeStamp[currpid] 	= 0;
+
+				proctab[currpid].plocks[currentLockId] = FALSE;
+			}
+			else
+			{
+				//Otherwise a process tried to release a lock it should not have owned
+				#ifdef DBG_PRINT
+					kprintf("Failed! lock %d is not owned by process %d(%s)!\n", currentLockId, currpid, proctab[currpid].pname);
+				#endif
+				kprintf("owner: %d %s\n", lk->owner, proctab[lk->owner].pname);
+				badLock = TRUE;
+			}
 		}
 		else
 		{
@@ -76,9 +93,13 @@ int releaseall(int numlk, long args)
 			if(readyBlockedProcess(currentLockId) == SYSERR)
 				badLock = TRUE;
 
+			proctab[currpid].pinh = 0;
+			priorityInheritance(currentLockId);
+
 		}
 	}
 
+/*
 	//Clear pinh
 	proctab[currpid].pinh = 0;
 	//Check if we still own any locks, if so perform prio inheritance on them
@@ -93,7 +114,7 @@ int releaseall(int numlk, long args)
 			}
 		}
 	}
-
+*/
 	//Check if we need to return syserr
 	if(badLock == TRUE)
 	{
@@ -163,7 +184,7 @@ int readyBlockedProcess(int lkId)
 				unsigned long waitTimePID2 = lk->timeStamp[i] - currTime;
 
 				//check if we are within 1 second of each other
-				if(waitTimePID1 + 1000 >= waitTimePID2 || waitTimePID1 - 1000 <= waitTimePID2)
+				if((waitTimePID2 >= (waitTimePID1 - 1000)) && (waitTimePID2 <= (waitTimePID1 + 1000)))
 				{
 					//if one is a writer use that one, 
 					//other wise use the one with longer wait time
@@ -191,23 +212,13 @@ int readyBlockedProcess(int lkId)
 	}
 
 
-	// Ready the process
-	if(maxPrioPid == -1)
-		maxPrioPid = lk->maxPrioPid;
-
 	if(isbadpid(maxPrioPid))
 	{
-		kprintf("Something has gone very wrong!\n");
-		return SYSERR;
+		//This is the only process that is in the queue, no one else wants it
+		return OK;
 	}
 
 	struct pentry *pptr = &proctab[maxPrioPid];
-	//Check if the process is waiting on this lock
-	if(pptr->pstate == PRWAIT && pptr->plockid == lkId)
-	{
-		pptr->plockid = -1;
-		ready(maxPrioPid, RESCHNO);
-	}
 	//Check if the new owner is a writer, if so we need to remove this locks readers from ready queue
 	if(lk->accType[maxPrioPid] == WRITE)
 	{
@@ -216,12 +227,27 @@ int readyBlockedProcess(int lkId)
 		{
 			if(lk->pid[i] == TRUE)
 			{
+				//Check if that process is currently ready
+				if(proctab[i].pstate == PRREADY)
+				{
+					//Remove it from the ready queue
+					kprintf("Remove(%d)\n", i);
+					remove(i, rdyhead);
+				}
 				proctab[i].plockid = lkId;
 				proctab[i].pstate = PRWAIT;
 				proctab[i].pwaitret = TRUE;
 			}
 		}
 	}
+
+	//Check if the process is waiting on this lock
+	if(pptr->pstate == PRWAIT && pptr->plockid == lkId)
+	{
+		pptr->plockid = -1;
+		ready(maxPrioPid, RESCHNO);
+	}
+
 
 	pptr->plocks[lkId] = TRUE;
 	
@@ -232,23 +258,3 @@ int readyBlockedProcess(int lkId)
 
 	return OK;
 }
-
-/*
-
-	else if(pptr->pstate == PRREADY && lk->accType[maxPrioPid] == READ) // if there was simulataneous readers
-	{
-		pptr->plocks[lkId] = TRUE;
-	}
-	else
-	{
-		kprintf("******There has been a large error in the release all function!\n");
-		kprintf("maxPrioPid: %d (%s), lockId: %d\n", maxPrioPid, pptr->pname, lkId);
-		kprintf("pid\tlk->pid\tlk->prio\tlk->accType\tlk->timeStamp\n");
-		int i = 0;
-		for(; i < NPROC; i++)
-			kprintf("%d\t%s\t%d\t\t%s\t%08X\n", i, lk->pid[i] == TRUE ? "TRUE " : "FALSE", lk->prio[i], lk->accType[i] == READ ? "READ " : "WRITE", lk->timeStamp[i]);
-
-		return SYSERR;
-	}
-
-*/

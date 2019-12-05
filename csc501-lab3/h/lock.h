@@ -50,5 +50,6 @@ int lcreate(void);					// Users creating a lock, returns a lock descriptor
 int releaseall(int numlk, long args);			// Releases numlk number of lock ids
 
 int priorityInheritance(int lkId);			// Performs the priority inheritance tasks
+void printLock(int lkId);				// Prints the locks information
 
 #endif
